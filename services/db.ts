@@ -3,16 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { Product, Transaction, DebtRecord, TransactionType, DebtType, ShopStats, LedgerEntry } from '../types';
 
 // KONFIGURASI SUPABASE
-// Mendukung Environment Variables Vercel/Vite dengan fallback ke hardcoded keys
-// PENTING: Pastikan Key Anda valid. Key 'sb_publishable_...' terlihat tidak standar untuk Supabase.
-// Biasanya key Supabase berawalan 'eyJ...'. Jika koneksi masih gagal, cek kembali Key di Dashboard Supabase > Project Settings > API.
-const SUPABASE_URL = (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_SUPABASE_URL) 
-  || process.env.REACT_APP_SUPABASE_URL 
-  || 'https://vqmfbnqjrdyijnpaywug.supabase.co';
-
-const SUPABASE_KEY = (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_SUPABASE_KEY)
-  || process.env.REACT_APP_SUPABASE_KEY
-  || 'sb_publishable_-MgxWwIiJHBhq1594eIdrw_NUSZKpQc'; // Key dari User
+// Menggunakan Key secara langsung sesuai permintaan untuk memastikan koneksi stabil
+const SUPABASE_URL = 'https://vqmfbnqjrdyijnpaywug.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_-MgxWwIiJHBhq1594eIdrw_NUSZKpQc';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -425,9 +418,7 @@ export const db = {
     };
   },
 
-  // --- SEED DUMMY DATA (REMOVED) ---
   seedDatabase: async () => {
-    // Fungsi dikosongkan untuk menghapus data dummy
-    console.log("Seed data dinonaktifkan.");
+    // Disabled
   }
 };
