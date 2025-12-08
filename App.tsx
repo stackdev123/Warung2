@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Package, ShoppingCart, DollarSign, Store, History, Loader2, Settings, X, Palette, Check } from 'lucide-react';
 import { Dashboard } from './pages/Dashboard';
 import { MasterData } from './pages/MasterData';
@@ -192,7 +193,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
@@ -202,7 +203,7 @@ const App: React.FC = () => {
           <Route path="/riwayat" element={<HistoryPage />} />
         </Routes>
       </Layout>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

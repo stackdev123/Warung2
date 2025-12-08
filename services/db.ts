@@ -1,9 +1,18 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { Product, Transaction, DebtRecord, TransactionType, DebtType, ShopStats, LedgerEntry } from '../types';
 
 // KONFIGURASI SUPABASE
-const SUPABASE_URL = 'https://vqmfbnqjrdyijnpaywug.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_-MgxWwIiJHBhq1594eIdrw_NUSZKpQc'; // Anon Key
+// Mendukung Environment Variables Vercel/Vite dengan fallback ke hardcoded keys
+// PENTING: Pastikan Key Anda valid. Key 'sb_publishable_...' terlihat tidak standar untuk Supabase.
+// Biasanya key Supabase berawalan 'eyJ...'. Jika koneksi masih gagal, cek kembali Key di Dashboard Supabase > Project Settings > API.
+const SUPABASE_URL = (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_SUPABASE_URL) 
+  || process.env.REACT_APP_SUPABASE_URL 
+  || 'https://vqmfbnqjrdyijnpaywug.supabase.co';
+
+const SUPABASE_KEY = (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_SUPABASE_KEY)
+  || process.env.REACT_APP_SUPABASE_KEY
+  || 'sb_publishable_-MgxWwIiJHBhq1594eIdrw_NUSZKpQc'; // Key dari User
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
