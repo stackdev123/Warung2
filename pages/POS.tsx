@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { Product, CartItem, Transaction, TransactionType, DebtType } from '../types';
 import { Scanner } from '../components/Scanner';
@@ -37,13 +37,6 @@ export const POS: React.FC = () => {
   const [savedParties, setSavedParties] = useState<string[]>([]);
   const [showPartySuggestions, setShowPartySuggestions] = useState(false);
 
-  // OPTIMISASI: Map untuk lookup produk super cepat (O(1))
-  const productMap = useMemo(() => {
-    const map = new Map<string, Product>();
-    allProducts.forEach(p => map.set(p.barcode, p));
-    return map;
-  }, [allProducts]);
-
   // Handle Mode Switch via Navigation State (e.g. from Master Data)
   useEffect(() => {
     if (location.state && location.state.mode) {
@@ -76,48 +69,26 @@ export const POS: React.FC = () => {
 
   useEffect(() => {
     if (scanFeedback) {
-      const timer = setTimeout(() => setScanFeedback(null), 1000); // Feedback lebih cepat hilang (1s)
+      const timer = setTimeout(() => setScanFeedback(null), 2000);
       return () => clearTimeout(timer);
     }
   }, [scanFeedback]);
 
-  // OPTIMISASI: Gunakan Audio Oscillator untuk suara beep Instan (Tanpa Network/Loading)
   const playBeep = () => {
-    try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
-      
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1500, ctx.currentTime); // High pitch beep
-      gain.gain.setValueAtTime(0.1, ctx.currentTime); // Volume
-      
-      osc.start();
-      osc.stop(ctx.currentTime + 0.1); // Durasi 100ms
-    } catch (e) {
-      console.error("Audio error", e);
-    }
+    const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+    audio.volume = 0.5;
+    audio.play().catch(e => console.log("Audio play failed", e));
   };
 
   const handleScan = (code: string) => {
-    // OPTIMISASI: Gunakan Map.get() daripada Array.find()
-    const product = productMap.get(code);
+    const product = allProducts.find(p => p.barcode === code);
 
     if (product) {
       playBeep();
       addToCart(product);
       setScanFeedback(`${product.name} (+1)`);
     } else {
-      // playBeep() untuk error bisa dibuat nada berbeda jika mau, sementara pakai beep biasa
-      playBeep(); 
-      // Opsional: Vibration feedback jika di mobile
-      if (navigator.vibrate) navigator.vibrate(200);
+      playBeep();
       alert(`Produk dengan kode ${code} tidak ditemukan!`);
     }
   };
