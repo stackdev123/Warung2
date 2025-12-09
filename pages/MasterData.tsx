@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../services/db';
 import { Product } from '../types';
 import { Scanner } from '../components/Scanner';
-import { Search, Plus, Trash2, Edit2, Box, X, PackageOpen, Tag, Loader2, Keyboard, ScanBarcode, Layers, AlertCircle } from 'lucide-react';
+import { Search, Plus, Trash2, Edit2, Box, X, PackageOpen, Tag, Loader2, Keyboard, ScanBarcode, Layers, AlertCircle, Filter, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
 export const MasterData: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -12,6 +13,10 @@ export const MasterData: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
   const [focusField, setFocusField] = useState<'barcode' | 'name' | 'stock'>('name');
+
+  // Filter States
+  const [categoryFilter, setCategoryFilter] = useState<string>('Semua');
+  const [stockFilter, setStockFilter] = useState<'ALL' | 'LOW'>('ALL');
 
   const nameInputRef = useRef<HTMLInputElement>(null);
   const stockInputRef = useRef<HTMLInputElement>(null);
@@ -60,7 +65,7 @@ export const MasterData: React.FC = () => {
     setEditingProduct({ 
       barcode, 
       name: '', 
-      category: 'Lainnya', 
+      category: categoryFilter !== 'Semua' ? categoryFilter : 'Lainnya', 
       buyPrice: 0, 
       sellPrice: 0, 
       stock: 0,
@@ -103,17 +108,23 @@ export const MasterData: React.FC = () => {
     return { dus, pcs };
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
-    p.barcode.includes(search)
-  );
+  // Unique Categories for Filter
+  const categories = ['Semua', ...Array.from(new Set(products.map(p => p.category))).sort()];
+
+  // Filter Logic
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.barcode.includes(search);
+    const matchesCategory = categoryFilter === 'Semua' || p.category === categoryFilter;
+    const matchesStock = stockFilter === 'ALL' || (stockFilter === 'LOW' && p.stock < 5);
+    return matchesSearch && matchesCategory && matchesStock;
+  });
 
   return (
     <div className="max-w-7xl mx-auto min-h-screen space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-           <h1 className="text-2xl font-bold text-gray-800">Stok Barang</h1>
-           <p className="text-gray-500 text-sm font-medium">{products.length} Item terdaftar dalam database</p>
+           <h1 className="text-2xl font-bold text-gray-800">Manajemen Stok</h1>
+           <p className="text-gray-500 text-sm font-medium">Kelola database produk dan harga</p>
         </div>
         <div className="flex gap-2">
           <button 
@@ -121,27 +132,64 @@ export const MasterData: React.FC = () => {
             className="flex-1 md:flex-none bg-white text-gray-700 border border-gray-200 px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold hover:bg-gray-50 transition-all shadow-sm text-sm"
           >
             <Keyboard size={18} />
-            Input Manual
+            <span className="hidden md:inline">Input</span> Manual
           </button>
           <button 
             onClick={() => setIsScannerOpen(true)}
             className="flex-1 md:flex-none bg-gray-900 text-white px-6 py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg hover:bg-gray-800 transition-all text-sm"
           >
             <ScanBarcode size={18} />
-            Scan Barcode
+            Scan <span className="hidden md:inline">Barcode</span>
           </button>
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
-        <input 
-          type="text" 
-          placeholder="Cari nama produk atau kode barcode..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 shadow-sm focus:ring-2 focus:ring-primary focus:bg-white bg-gray-50 outline-none text-lg transition-all"
-        />
+      <div className="space-y-4">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
+          <input 
+            type="text" 
+            placeholder="Cari nama produk atau kode barcode..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 shadow-sm focus:ring-2 focus:ring-primary focus:bg-white bg-white outline-none text-lg transition-all"
+          />
+        </div>
+
+        {/* Filter Toolbar */}
+        <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between bg-white p-2 rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full md:w-auto px-1">
+             <Filter size={18} className="text-gray-400 flex-shrink-0 ml-1 mr-1" />
+             {categories.map(cat => (
+               <button
+                 key={cat}
+                 onClick={() => setCategoryFilter(cat)}
+                 className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                   categoryFilter === cat 
+                     ? 'bg-gray-900 text-white shadow-md' 
+                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                 }`}
+               >
+                 {cat}
+               </button>
+             ))}
+          </div>
+          
+          <div className="border-t md:border-t-0 md:border-l border-gray-100 w-full md:w-auto pt-2 md:pt-0 md:pl-3 flex items-center">
+            <button
+               onClick={() => setStockFilter(stockFilter === 'ALL' ? 'LOW' : 'ALL')}
+               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all w-full md:w-auto justify-center ${
+                 stockFilter === 'LOW' 
+                   ? 'bg-red-100 text-red-600 border border-red-200' 
+                   : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
+               }`}
+            >
+              <AlertCircle size={14} />
+              {stockFilter === 'LOW' ? 'Menampilkan Stok Menipis' : 'Tampilkan Stok Menipis'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {loadingData && !isModalOpen && (
@@ -151,81 +199,142 @@ export const MasterData: React.FC = () => {
         </div>
       )}
 
-      {/* CONTAINER UTAMA: List di Mobile (bg-white unified), Grid di Desktop (bg-transparent) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-0 md:gap-5 bg-white md:bg-transparent rounded-2xl md:rounded-none shadow-sm md:shadow-none border md:border-none border-gray-100 divide-y md:divide-y-0 divide-gray-100 overflow-hidden md:overflow-visible">
-        {!loadingData && filteredProducts.map(p => (
-          <div key={p.barcode} className="group relative p-4 md:p-5 md:bg-white md:rounded-2xl md:shadow-sm md:border md:border-gray-100 md:hover:shadow-lg md:hover:-translate-y-1 transition-all">
-            
-            {/* Colored Top Border for Desktop */}
-            <div className="hidden md:block absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-t-2xl"></div>
+      {!loadingData && (
+        <>
+          <div className="flex justify-between items-center px-1">
+            <p className="text-sm text-gray-500 font-medium">
+              Menampilkan {filteredProducts.length} produk
+              {stockFilter === 'LOW' && <span className="text-red-500 font-bold ml-1">(Mode Stok Menipis)</span>}
+            </p>
+          </div>
 
-            {/* TAMPILAN MOBILE (Compact List Row) */}
-            <div className="flex md:hidden justify-between items-center">
-               <div className="flex-1 min-w-0 pr-3 cursor-pointer" onClick={() => { setFocusField('stock'); handleEdit(p); }}>
-                  <div className="flex items-center gap-2 mb-1">
-                     <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500 uppercase font-bold tracking-wider">{p.category}</span>
-                     {p.stock < 5 && <AlertCircle size={14} className="text-red-500" />}
-                  </div>
-                  <h3 className="font-bold text-gray-800 text-sm truncate">{p.name}</h3>
-                  <div className="flex items-center gap-3 mt-1.5">
-                     <span className="text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">Rp {p.sellPrice.toLocaleString()}</span>
-                  </div>
-               </div>
+          {/* TABLE VIEW (DESKTOP) */}
+          <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 text-xs uppercase font-bold">
+                  <tr>
+                    <th className="px-6 py-4">Nama Produk</th>
+                    <th className="px-6 py-4">Kategori</th>
+                    <th className="px-6 py-4 text-right">Harga Beli</th>
+                    <th className="px-6 py-4 text-right">Harga Jual</th>
+                    <th className="px-6 py-4 text-center">Stok</th>
+                    <th className="px-6 py-4 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredProducts.map((p) => (
+                    <tr 
+                      key={p.barcode} 
+                      className="hover:bg-gray-50/80 transition-colors group cursor-pointer"
+                      onClick={() => { setFocusField('stock'); handleEdit(p); }}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-gray-800 text-sm">{p.name}</span>
+                          <span className="text-xs text-gray-400 font-mono">{p.barcode}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-block px-2 py-1 bg-gray-100 rounded text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {p.category}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-gray-500 font-medium text-sm">Rp {p.buyPrice.toLocaleString()}</span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-emerald-600 font-bold text-sm">Rp {p.sellPrice.toLocaleString()}</span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                         <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-sm font-bold ${p.stock < 5 ? 'bg-red-100 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                           {p.stock}
+                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                         <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setFocusField('name'); handleEdit(p); }}
+                              className="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                              title="Edit"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleDelete(p.barcode); }}
+                              className="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                              title="Hapus"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                         </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-               <div className="flex items-center gap-3 border-l pl-3 border-gray-100">
-                  <div className="text-right cursor-pointer" onClick={() => { setFocusField('stock'); handleEdit(p); }}>
-                     <p className="text-[10px] text-gray-400 uppercase font-bold">Stok</p>
+          {/* LIST VIEW (MOBILE) */}
+          <div className="md:hidden space-y-3">
+            {filteredProducts.map(p => (
+              <div 
+                key={p.barcode} 
+                className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm active:scale-[0.99] transition-transform"
+                onClick={() => { setFocusField('stock'); handleEdit(p); }}
+              >
+                <div className="flex justify-between items-start mb-2">
+                   <div className="flex items-center gap-2">
+                      <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500 uppercase font-bold tracking-wider">{p.category}</span>
+                   </div>
+                   {p.stock < 5 && (
+                     <div className="flex items-center gap-1 text-red-500 text-[10px] font-bold bg-red-50 px-2 py-0.5 rounded-full">
+                       <AlertCircle size={10} /> Stok Rendah
+                     </div>
+                   )}
+                </div>
+
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex-1 pr-4">
+                     <h3 className="font-bold text-gray-800 text-sm line-clamp-2">{p.name}</h3>
+                     <p className="text-[10px] text-gray-400 font-mono mt-0.5">{p.barcode}</p>
+                  </div>
+                  <div className="text-center px-3 py-1 bg-gray-50 rounded-lg">
+                     <p className="text-[10px] text-gray-400 font-bold uppercase">Stok</p>
                      <p className={`font-bold text-lg leading-none ${p.stock < 5 ? 'text-red-500' : 'text-gray-800'}`}>{p.stock}</p>
                   </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                   <div className="flex gap-4">
+                      <div>
+                        <p className="text-[10px] text-gray-400">Harga Beli</p>
+                        <p className="text-xs font-medium text-gray-600">Rp {p.buyPrice.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-400">Harga Jual</p>
+                        <p className="text-xs font-bold text-emerald-600">Rp {p.sellPrice.toLocaleString()}</p>
+                      </div>
+                   </div>
                    <button 
-                    onClick={(e) => { e.stopPropagation(); handleDelete(p.barcode); }} 
-                    className="p-2 text-gray-300 hover:text-red-500 active:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-               </div>
-            </div>
-
-            {/* TAMPILAN DESKTOP (Full Card) */}
-            <div className="hidden md:block pt-2">
-              <div className="flex justify-between items-start mb-3">
-                <span className="text-[10px] font-bold px-2 py-1 rounded bg-gray-100 text-gray-500 uppercase tracking-wide">
-                  {p.category}
-                </span>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <button onClick={() => { setFocusField('stock'); handleEdit(p); }} className="p-1.5 text-blue-600 bg-blue-50 rounded hover:bg-blue-100">
-                    <Edit2 size={16} />
-                  </button>
-                  <button onClick={() => handleDelete(p.barcode)} className="p-1.5 text-red-600 bg-red-50 rounded hover:bg-red-100">
-                    <Trash2 size={16} />
-                  </button>
+                      onClick={(e) => { e.stopPropagation(); handleDelete(p.barcode); }}
+                      className="p-2 text-gray-300 hover:text-red-500 rounded-full"
+                    >
+                      <Trash2 size={16} />
+                   </button>
                 </div>
               </div>
-
-              <h3 className="font-bold text-gray-800 text-lg leading-tight mb-1 line-clamp-2 h-12">{p.name}</h3>
-              <p className="text-xs text-gray-400 font-mono mb-4">{p.barcode}</p>
-              
-              <div className="grid grid-cols-2 gap-2 border-t border-gray-50 pt-3">
-                <div className="bg-gray-50 p-2 rounded-lg">
-                  <p className="text-[10px] text-gray-400 uppercase font-bold mb-1">Jual</p>
-                  <p className="font-bold text-gray-900 text-sm">Rp {p.sellPrice.toLocaleString()}</p>
-                </div>
-                <div className={`p-2 rounded-lg ${p.stock < 5 ? 'bg-red-50' : 'bg-emerald-50'}`}>
-                  <p className={`text-[10px] uppercase font-bold mb-1 ${p.stock < 5 ? 'text-red-400' : 'text-emerald-400'}`}>Stok</p>
-                  <p className={`font-bold text-xl leading-none ${p.stock < 5 ? 'text-red-600' : 'text-emerald-600'}`}>{p.stock}</p>
-                </div>
-              </div>
-            </div>
-
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
       {!loadingData && filteredProducts.length === 0 && (
         <div className="text-center py-20 text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
           <Box size={64} className="mx-auto mb-4 opacity-30" />
           <p className="text-lg font-bold text-gray-600">Produk tidak ditemukan.</p>
-          <p className="text-sm">Scan barcode atau klik Input Manual untuk menambah.</p>
+          <p className="text-sm">Coba ubah filter atau kata kunci pencarian.</p>
         </div>
       )}
 
@@ -382,19 +491,22 @@ export const MasterData: React.FC = () => {
 
               <div>
                  <label className="text-xs font-bold text-gray-500 block mb-2 uppercase">Kategori</label>
-                 <select 
-                   value={editingProduct.category} 
-                   onChange={e => setEditingProduct({...editingProduct, category: e.target.value})}
-                   className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary appearance-none font-medium"
-                 >
-                   <option>Makanan</option>
-                   <option>Minuman</option>
-                   <option>Sembako</option>
-                   <option>Kebersihan</option>
-                   <option>Rokok</option>
-                   <option>Obat-obatan</option>
-                   <option>Lainnya</option>
-                 </select>
+                 <div className="grid grid-cols-2 gap-2">
+                   {['Makanan', 'Minuman', 'Sembako', 'Kebersihan', 'Rokok', 'Obat-obatan', 'Lainnya'].map(cat => (
+                     <button
+                       key={cat}
+                       type="button"
+                       onClick={() => setEditingProduct({...editingProduct, category: cat})}
+                       className={`p-2 rounded-lg text-sm font-medium border transition-all ${
+                         editingProduct.category === cat 
+                           ? 'bg-primary text-white border-primary shadow-sm' 
+                           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                       }`}
+                     >
+                       {cat}
+                     </button>
+                   ))}
+                 </div>
               </div>
 
               <button 
