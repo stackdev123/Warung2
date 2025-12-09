@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Zap, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
@@ -69,13 +68,13 @@ export const Scanner: React.FC<ScannerProps> = ({
             {
               fps: 10,
               // Dynamic QR Box size based on viewfinder dimensions
-              // This is crucial for small containers (like the h-48 mobile strip)
+              // Widen the scan area to better support long barcodes
               qrbox: (viewfinderWidth, viewfinderHeight) => {
-                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                return {
-                  width: Math.floor(minEdge * 0.7),
-                  height: Math.floor(minEdge * 0.7)
-                };
+                // Use 85% of width for wide barcodes
+                const width = Math.floor(viewfinderWidth * 0.85);
+                // Use 60% of height (enough for 1D barcodes and QR codes)
+                const height = Math.floor(viewfinderHeight * 0.60);
+                return { width, height };
               },
               // Removed fixed aspectRatio to allow camera to fill wide/short containers
               formatsToSupport: formatsToSupport,
@@ -172,8 +171,8 @@ export const Scanner: React.FC<ScannerProps> = ({
             
             {/* Overlay UI */}
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              {/* Reduced size for better fit in small containers */}
-              <div className="relative w-40 h-40 sm:w-64 sm:h-64 border-2 border-primary/50 rounded-lg">
+              {/* Wide rectangular overlay for Barcodes */}
+              <div className="relative w-[85%] h-[60%] border-2 border-primary/50 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.3)]">
                  {/* Pojok Scanner */}
                  <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-green-500 -mt-1 -ml-1"></div>
                  <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-green-500 -mt-1 -mr-1"></div>
