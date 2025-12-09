@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Zap, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
@@ -67,8 +68,16 @@ export const Scanner: React.FC<ScannerProps> = ({
             { facingMode: "environment" },
             {
               fps: 10,
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0,
+              // Dynamic QR Box size based on viewfinder dimensions
+              // This is crucial for small containers (like the h-48 mobile strip)
+              qrbox: (viewfinderWidth, viewfinderHeight) => {
+                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                return {
+                  width: Math.floor(minEdge * 0.7),
+                  height: Math.floor(minEdge * 0.7)
+                };
+              },
+              // Removed fixed aspectRatio to allow camera to fill wide/short containers
               formatsToSupport: formatsToSupport,
               disableFlip: false
             },
@@ -163,7 +172,8 @@ export const Scanner: React.FC<ScannerProps> = ({
             
             {/* Overlay UI */}
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <div className="relative w-48 h-48 sm:w-64 sm:h-64 border-2 border-primary/50 rounded-lg">
+              {/* Reduced size for better fit in small containers */}
+              <div className="relative w-40 h-40 sm:w-64 sm:h-64 border-2 border-primary/50 rounded-lg">
                  {/* Pojok Scanner */}
                  <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-green-500 -mt-1 -ml-1"></div>
                  <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-green-500 -mt-1 -mr-1"></div>

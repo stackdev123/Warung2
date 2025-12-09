@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { Product, CartItem, Transaction, TransactionType, DebtType } from '../types';
 import { Scanner } from '../components/Scanner';
-import { Scan, ShoppingCart, Minus, Plus, Trash, CheckCircle, Banknote, BookOpen, X, Search, Package, Users, Loader2, Printer, History, FileText, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Scan, ShoppingCart, Minus, Plus, Trash, CheckCircle, Banknote, BookOpen, X, Search, Package, Users, Loader2, Printer, History, FileText, ArrowRight, LogOut } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const POS: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [mode, setMode] = useState<TransactionType>(TransactionType.OUT);
   const [cart, setCart] = useState<CartItem[]>([]);
   
@@ -36,6 +36,16 @@ export const POS: React.FC = () => {
 
   const [savedParties, setSavedParties] = useState<string[]>([]);
   const [showPartySuggestions, setShowPartySuggestions] = useState(false);
+
+  // Handle Mode Switch via Navigation State (e.g. from Master Data)
+  useEffect(() => {
+    if (location.state && location.state.mode) {
+      setMode(location.state.mode);
+    } else {
+      // Default to OUT (Sales) if no state provided
+      setMode(TransactionType.OUT);
+    }
+  }, [location]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -234,6 +244,13 @@ export const POS: React.FC = () => {
     setLastTransaction(null);
   };
 
+  const exitRestockMode = () => {
+    setMode(TransactionType.OUT);
+    setCart([]);
+    // Clear history state to avoid sticking to restock mode on refresh/back
+    navigate('/pos', { replace: true, state: {} });
+  };
+
   const total = calculateTotal();
   const getCalculationState = () => {
     const paid = parseFloat(amountPaid) || 0;
@@ -327,7 +344,7 @@ export const POS: React.FC = () => {
       <div className="flex-1 hidden md:flex flex-col border-r border-gray-200 h-full">
         {!isScannerOpen ? (
           <>
-            <div className="p-5 bg-white border-b border-gray-100 flex gap-4 items-center shadow-sm z-10">
+            <div className={`p-5 border-b flex gap-4 items-center shadow-sm z-10 ${mode === TransactionType.IN ? 'bg-blue-50 border-blue-100' : 'bg-white border-gray-100'}`}>
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 text-gray-400" size={20} />
                 <input 
@@ -335,13 +352,13 @@ export const POS: React.FC = () => {
                   placeholder="Cari nama produk atau scan barcode..." 
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-white/80 rounded-xl outline-none focus:ring-2 focus:ring-primary transition-all"
                   // Removed autoFocus to prevent keyboard popup
                 />
               </div>
               <button 
                  onClick={() => navigate('/riwayat')}
-                 className="bg-gray-100 text-gray-600 px-4 py-3 rounded-xl flex items-center gap-2 font-bold hover:bg-gray-200 transition-colors"
+                 className="bg-white/80 text-gray-600 px-4 py-3 rounded-xl flex items-center gap-2 font-bold hover:bg-gray-200 transition-colors"
               >
                 <History size={20} />
               </button>
@@ -354,6 +371,13 @@ export const POS: React.FC = () => {
             </div>
             
             <div className="flex-1 overflow-y-auto p-5 bg-gray-50">
+              {mode === TransactionType.IN && (
+                <div className="mb-4 bg-blue-100 text-blue-800 p-3 rounded-xl flex justify-between items-center animate-in slide-in-from-top-2">
+                  <span className="font-bold flex items-center gap-2"><ShoppingCart size={18}/> MODE BELANJA STOK</span>
+                  <button onClick={exitRestockMode} className="text-xs bg-white/50 hover:bg-white px-2 py-1 rounded-lg font-bold">Kembali ke Kasir</button>
+                </div>
+              )}
+              
               <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredProducts.map(p => (
                   <div 
@@ -373,7 +397,9 @@ export const POS: React.FC = () => {
                          {p.pcsPerCarton && p.pcsPerCarton > 1 && (
                            <p className="text-[10px] text-gray-400 font-bold mb-0.5">1 Dus = {p.pcsPerCarton}</p>
                          )}
-                         <p className="font-bold text-lg text-primary">Rp {p.sellPrice.toLocaleString()}</p>
+                         <p className={`font-bold text-lg ${mode === TransactionType.IN ? 'text-gray-600' : 'text-primary'}`}>
+                            Rp {(mode === TransactionType.IN ? p.buyPrice : p.sellPrice).toLocaleString()}
+                         </p>
                       </div>
                       {p.pcsPerCarton && p.pcsPerCarton > 1 && (
                         <button 
@@ -424,33 +450,27 @@ export const POS: React.FC = () => {
       <div className="w-full md:w-[420px] bg-white flex flex-col h-full shadow-2xl z-20">
         
         {/* Mobile Header (Only visible on small screens) */}
-        <div className="md:hidden p-3 bg-white border-b shadow-sm z-10 shrink-0">
+        <div className={`md:hidden p-3 border-b shadow-sm z-10 shrink-0 ${mode === TransactionType.IN ? 'bg-blue-50 border-blue-100' : 'bg-white'}`}>
           <div className="flex justify-between items-center mb-2">
              <div className="font-bold text-gray-800 text-lg flex items-center gap-2">
-               Kasir {isScannerOpen && <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wide ${mode === TransactionType.OUT ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>{mode === TransactionType.OUT ? 'JUAL' : 'STOK'}</span>}
+               {mode === TransactionType.IN ? 'Belanja Stok' : 'Kasir'}
+               {mode === TransactionType.IN && (
+                 <span className="text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wide bg-blue-100 text-blue-700">RESTOCK</span>
+               )}
              </div>
-             <button onClick={() => navigate('/riwayat')} className="bg-gray-100 p-2 rounded-full text-gray-600">
-               <History size={20} />
-             </button>
+             <div className="flex gap-2">
+                {mode === TransactionType.IN && (
+                  <button onClick={exitRestockMode} className="bg-white border border-gray-200 p-2 rounded-full text-red-500" title="Keluar Mode Restock">
+                    <LogOut size={20} />
+                  </button>
+                )}
+                <button onClick={() => navigate('/riwayat')} className="bg-gray-100 p-2 rounded-full text-gray-600">
+                  <History size={20} />
+                </button>
+             </div>
           </div>
           
-          {/* HIDE this section when scanner is OPEN */}
-          {!isScannerOpen && (
-            <div className="flex bg-gray-100 rounded-lg p-1 mb-2 animate-in slide-in-from-top-2 duration-200">
-              <button 
-                onClick={() => { setMode(TransactionType.OUT); setCart([]); }}
-                className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${mode === TransactionType.OUT ? 'bg-white text-primary shadow-sm' : 'text-gray-500'}`}
-              >
-                Penjualan
-              </button>
-              <button 
-                onClick={() => { setMode(TransactionType.IN); setCart([]); }}
-                className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${mode === TransactionType.IN ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
-              >
-                Restock
-              </button>
-            </div>
-          )}
+          {/* Removed Transaction Type Toggle - Default is Sales, Restock triggered from Master Data */}
 
           <div className="flex gap-2">
             <button 
@@ -464,9 +484,9 @@ export const POS: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Scanner Embedded Area - Aspect Ratio controlled to prevent cutoff */}
+        {/* Mobile Scanner Embedded Area - Smaller Fixed Height */}
         {isScannerOpen && (
-           <div className="w-full aspect-[4/3] bg-black relative shrink-0 md:hidden border-b-4 border-primary animate-in slide-in-from-top duration-300">
+           <div className="w-full h-48 bg-black relative shrink-0 md:hidden border-b-4 border-primary animate-in slide-in-from-top duration-300">
               <Scanner 
                  isOpen={true} 
                  onScan={handleScan} 
@@ -479,24 +499,16 @@ export const POS: React.FC = () => {
         )}
 
         {/* Desktop Header for Cart */}
-        <div className="hidden md:flex p-5 border-b items-center justify-between bg-white shrink-0">
+        <div className={`hidden md:flex p-5 border-b items-center justify-between shrink-0 ${mode === TransactionType.IN ? 'bg-blue-50/50' : 'bg-white'}`}>
            <h2 className="font-bold text-xl flex items-center gap-2 text-gray-800">
-             <ShoppingCart size={24} className="text-primary"/> Keranjang
+             <ShoppingCart size={24} className={mode === TransactionType.IN ? "text-blue-600" : "text-primary"}/> 
+             {mode === TransactionType.IN ? 'Keranjang Belanja' : 'Keranjang'}
            </h2>
-           <div className="flex bg-gray-100 rounded-lg p-1">
-             <button 
-                onClick={() => { setMode(TransactionType.OUT); setCart([]); }}
-                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mode === TransactionType.OUT ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-             >
-               Jual
+           {mode === TransactionType.IN && (
+             <button onClick={exitRestockMode} className="text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-1 rounded-full transition-colors">
+               Batal Restock
              </button>
-             <button 
-                onClick={() => { setMode(TransactionType.IN); setCart([]); }}
-                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mode === TransactionType.IN ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-             >
-               Beli
-             </button>
-           </div>
+           )}
         </div>
 
         {/* Cart Items - Flex 1 and overflow auto ensures it takes remaining space */}
@@ -514,7 +526,7 @@ export const POS: React.FC = () => {
               <div key={item.barcode} className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center group animate-in slide-in-from-right-4 duration-300">
                 <div className="flex-1">
                   <h4 className="font-bold text-gray-800 text-sm line-clamp-1 mb-1">{item.name}</h4>
-                  <p className="text-xs text-primary font-bold">
+                  <p className={`text-xs font-bold ${mode === TransactionType.IN ? 'text-gray-500' : 'text-primary'}`}>
                     @ {(mode === TransactionType.OUT ? item.sellPrice : item.buyPrice).toLocaleString()}
                   </p>
                 </div>
@@ -534,7 +546,7 @@ export const POS: React.FC = () => {
         {/* Cart Footer - Shrink 0 to never collapse */}
         <div className="p-4 md:p-5 bg-white border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-20 shrink-0 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
           <div className="flex justify-between items-end mb-4">
-            <span className="text-gray-500 font-medium">Total Tagihan</span>
+            <span className="text-gray-500 font-medium">{mode === TransactionType.IN ? 'Total Belanja' : 'Total Tagihan'}</span>
             <span className="text-3xl font-bold text-gray-800">Rp {total.toLocaleString()}</span>
           </div>
           
@@ -608,7 +620,9 @@ export const POS: React.FC = () => {
                     )}
                   </div>
                   <div className="text-right flex flex-col items-end gap-2">
-                    <p className="font-bold text-primary text-xl">Rp {product.sellPrice.toLocaleString()}</p>
+                    <p className={`font-bold text-xl ${mode === TransactionType.IN ? 'text-gray-700' : 'text-primary'}`}>
+                      Rp {(mode === TransactionType.IN ? product.buyPrice : product.sellPrice).toLocaleString()}
+                    </p>
                      {product.pcsPerCarton && product.pcsPerCarton > 1 && (
                       <button 
                         onClick={(e) => {

@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../services/db';
 import { Product } from '../types';
 import { Scanner } from '../components/Scanner';
-import { Search, Plus, Trash2, Edit2, Box, X, PackageOpen, Tag, Loader2, Keyboard, ScanBarcode, Layers, AlertCircle, Filter, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Search, Plus, Trash2, Edit2, Box, X, PackageOpen, Tag, Loader2, Keyboard, ScanBarcode, Layers, AlertCircle, Filter, ArrowUpRight, ArrowDownLeft, ShoppingCart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const MasterData: React.FC = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -88,6 +90,11 @@ export const MasterData: React.FC = () => {
     }
   };
 
+  const goToRestockMode = () => {
+    // Navigate to POS with State to trigger Restock Mode
+    navigate('/pos', { state: { mode: 'MASUK' } });
+  };
+
   // Helper untuk menghitung Dus dan Pcs Sisa
   const getStockBreakdown = (stock: number, pcsPerCarton: number) => {
     const dus = Math.floor(stock / (pcsPerCarton || 1));
@@ -113,20 +120,27 @@ export const MasterData: React.FC = () => {
            <h1 className="text-2xl font-bold text-gray-800">Manajemen Stok</h1>
            <p className="text-gray-500 text-sm font-medium">Kelola database produk dan harga</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <button 
+            onClick={goToRestockMode}
+            className="flex-1 md:flex-none bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold hover:bg-blue-700 transition-all shadow-lg text-sm whitespace-nowrap"
+          >
+            <ShoppingCart size={18} />
+            Belanja Stok
+          </button>
           <button 
             onClick={() => handleAdd('')}
-            className="flex-1 md:flex-none bg-white text-gray-700 border border-gray-200 px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold hover:bg-gray-50 transition-all shadow-sm text-sm"
+            className="flex-1 md:flex-none bg-white text-gray-700 border border-gray-200 px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold hover:bg-gray-50 transition-all shadow-sm text-sm whitespace-nowrap"
           >
             <Keyboard size={18} />
-            <span className="hidden md:inline">Input</span> Manual
+            Input Baru
           </button>
           <button 
             onClick={() => setIsScannerOpen(true)}
-            className="flex-1 md:flex-none bg-gray-900 text-white px-6 py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg hover:bg-gray-800 transition-all text-sm"
+            className="flex-1 md:flex-none bg-gray-900 text-white px-6 py-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg hover:bg-gray-800 transition-all text-sm whitespace-nowrap"
           >
             <ScanBarcode size={18} />
-            Scan <span className="hidden md:inline">Barcode</span>
+            Scan
           </button>
         </div>
       </div>
