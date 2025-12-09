@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { DebtRecord, DebtType, ShopStats, LedgerEntry, Transaction, TransactionType } from '../types';
@@ -740,7 +737,7 @@ export const Finance: React.FC = () => {
                   onChange={e => setNewLedgerEntry({...newLedgerEntry, description: e.target.value})}
                   className="w-full p-4 bg-gray-50 rounded-xl border-2 border-transparent focus:bg-white focus:border-primary outline-none transition-all font-medium"
                   placeholder={ledgerEntryType === 'INCOME' ? "Contoh: Jual Kardus Bekas" : "Contoh: Bayar Listrik"}
-                  autoFocus
+                  // Removed autoFocus
                   required
                 />
               </div>
@@ -807,7 +804,7 @@ export const Finance: React.FC = () => {
                     onChange={e => setActualCash(e.target.value)}
                     className="w-full pl-12 pr-4 p-4 bg-white border-2 border-primary rounded-xl focus:outline-none text-2xl font-bold shadow-sm"
                     placeholder="0"
-                    autoFocus
+                    // Removed autoFocus
                     required
                   />
                 </div>
@@ -942,7 +939,7 @@ export const Finance: React.FC = () => {
                     onChange={e => setPaymentAmount(e.target.value)}
                     className="w-full pl-12 pr-4 p-4 bg-white border-2 border-primary rounded-xl focus:outline-none text-2xl font-bold shadow-sm"
                     placeholder="0"
-                    autoFocus
+                    // Removed autoFocus
                     required
                   />
                 </div>

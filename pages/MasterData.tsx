@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../services/db';
 import { Product } from '../types';
@@ -26,20 +25,8 @@ export const MasterData: React.FC = () => {
     loadProducts();
   }, []);
 
-  useEffect(() => {
-    if (isModalOpen) {
-      const timer = setTimeout(() => {
-        if (focusField === 'barcode' && barcodeInputRef.current) {
-          barcodeInputRef.current.focus();
-        } else if (focusField === 'name' && nameInputRef.current) {
-          nameInputRef.current.focus();
-        } else if (focusField === 'stock' && stockInputRef.current) {
-          stockInputRef.current.focus();
-        }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isModalOpen, focusField]);
+  // Removed useEffect for autoFocus on modal open to prevent keyboard popup
+  // Users should tap to focus
 
   const loadProducts = async () => {
     setLoadingData(true);
@@ -154,6 +141,7 @@ export const MasterData: React.FC = () => {
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 shadow-sm focus:ring-2 focus:ring-primary focus:bg-white bg-white outline-none text-lg transition-all"
+            // Removed autoFocus
           />
         </div>
 
@@ -376,6 +364,7 @@ export const MasterData: React.FC = () => {
                   placeholder="Scan atau ketik kode unik..."
                   disabled={!!products.find(p => p.barcode === editingProduct.barcode && editingProduct.barcode !== '')}
                   required
+                  // Removed autoFocus
                 />
               </div>
 
