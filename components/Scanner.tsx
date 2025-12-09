@@ -27,7 +27,9 @@ export const Scanner: React.FC<ScannerProps> = ({
   // Logic untuk mencegah double-scan instan pada kode yang sama
   const lastScannedCodeRef = useRef<string | null>(null);
   const lastScannedTimeRef = useRef<number>(0);
-  const SCAN_DELAY = 1500; // Jeda waktu (ms) sebelum bisa scan kode yang SAMA lagi
+  
+  // OPTIMISASI: Kurangi delay agar bisa scan barang beruntun lebih cepat
+  const SCAN_DELAY = 800; // 800ms (sebelumnya 1500ms)
 
   useEffect(() => {
     mountedRef.current = true;
@@ -66,7 +68,8 @@ export const Scanner: React.FC<ScannerProps> = ({
           await html5QrCode.start(
             { facingMode: "environment" },
             {
-              fps: 10,
+              // OPTIMISASI: Naikkan FPS ke 25 agar lebih responsif menangkap gerakan
+              fps: 25, 
               // Dynamic QR Box size based on viewfinder dimensions
               // Widen the scan area to better support long barcodes
               qrbox: (viewfinderWidth, viewfinderHeight) => {
@@ -78,7 +81,11 @@ export const Scanner: React.FC<ScannerProps> = ({
               },
               // Removed fixed aspectRatio to allow camera to fill wide/short containers
               formatsToSupport: formatsToSupport,
-              disableFlip: false
+              disableFlip: false,
+              // OPTIMISASI: Video constraints untuk fokus
+              videoConstraints: {
+                focusMode: 'continuous', // Mencoba memaksa auto-focus terus menerus (Android/Chrome)
+              }
             },
             (decodedText) => {
               if (!mountedRef.current) return;
