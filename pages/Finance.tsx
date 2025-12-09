@@ -1,9 +1,11 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { DebtRecord, DebtType, ShopStats, LedgerEntry, Transaction, TransactionType } from '../types';
-import { Plus, ArrowUpRight, ArrowDownLeft, Wallet, Trash2, Check, Scale, Users, UserPlus, Loader2, X, CreditCard, Book, ChevronRight, User, Calendar, MinusCircle, PlusCircle, RefreshCw, Landmark, Filter, PieChart as PieIcon, BarChart3 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell } from 'recharts';
+import { Plus, ArrowUpRight, ArrowDownLeft, Wallet, Trash2, Scale, Users, UserPlus, Loader2, X, CreditCard, Book, ChevronRight, MinusCircle, PlusCircle, RefreshCw, Landmark, BarChart3 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
 export const Finance: React.FC = () => {
   const [tab, setTab] = useState<'HUTANG' | 'PIUTANG' | 'NERACA' | 'LEDGER'>('PIUTANG');
@@ -487,7 +489,7 @@ export const Finance: React.FC = () => {
                            <p className="text-xs text-gray-500">Kewajiban Supplier</p>
                         </div>
                      </div>
-                     <span className="font-bold text-gray-800 text-lg">Rp {totalLiabilities.toLocaleString()}</span>
+                     <span className="font-bold text-gray-800 text-lg">Rp {stats.totalPayable.toLocaleString()}</span>
                   </div>
                   <div className="p-5 flex justify-between items-center hover:bg-gray-50 transition-colors">
                      <div className="flex gap-4 items-center">

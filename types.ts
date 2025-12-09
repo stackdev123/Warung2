@@ -1,4 +1,5 @@
 
+
 export enum TransactionType {
   IN = 'MASUK', // Restock
   OUT = 'KELUAR', // Sale
@@ -29,7 +30,7 @@ export interface Transaction {
   totalAmount: number;
   note?: string;
   // Payment Details
-  paymentMethod: 'CASH' | 'DEBT' | 'QRIS';
+  paymentMethod: 'CASH' | 'DEBT'; // QRIS Removed
   amountPaid: number; // Uang yang diterima/dibayar
   change: number; // Kembalian
   partyName?: string; // Nama Pelanggan (jika Piutang) atau Supplier (jika Hutang)
@@ -70,4 +71,12 @@ export interface LedgerEntry {
   amount: number;
   balance: number;
   category: 'PENJUALAN' | 'BELANJA' | 'OPERASIONAL' | 'KOREKSI';
+}
+
+export interface TopProduct {
+  barcode: string;
+  name: string;
+  quantitySold: number;
+  revenue: number;
+  stock: number;
 }

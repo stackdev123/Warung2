@@ -1,6 +1,7 @@
 
+
 import { createClient } from '@supabase/supabase-js';
-import { Product, Transaction, DebtRecord, TransactionType, DebtType, ShopStats, LedgerEntry } from '../types';
+import { Product, Transaction, DebtRecord, TransactionType, DebtType, ShopStats, LedgerEntry, TopProduct } from '../types';
 
 // KONFIGURASI SUPABASE
 // Menggunakan Key secara langsung sesuai permintaan untuk memastikan koneksi stabil
@@ -201,11 +202,8 @@ export const db = {
       if (itemsError) console.error('Error saving transaction items:', itemsError);
 
       // 3. Update Product Stock
-      // Untuk aplikasi sederhana ini, kita loop update. Idealnya pakai RPC untuk atomicity.
       if (transaction.type === TransactionType.IN || transaction.type === TransactionType.OUT) {
         for (const item of transaction.items) {
-          // Fetch current stock first to be safe, or direct RPC increment
-          // Kita pakai RPC sederhana atau fetch-update manual. Manual dulu:
           const { data: prod } = await supabase.from('products').select('stock').eq('barcode', item.barcode).single();
           
           if (prod) {
@@ -263,10 +261,8 @@ export const db = {
   },
 
   // --- LEDGER / BUKU KAS ---
-  // Note: Masih menghitung manual di client side berdasarkan data transaksi,
-  // untuk konsistensi logika yang sudah ada tanpa perlu stored procedure rumit.
   getLedger: async (): Promise<LedgerEntry[]> => {
-    const transactions = await db.getTransactions(); // Re-use getTransactions which fetches from DB
+    const transactions = await db.getTransactions(); 
     
     // Sort oldest first to calculate running balance
     transactions.sort((a, b) => a.timestamp - b.timestamp);
@@ -284,16 +280,13 @@ export const db = {
            if (t.paymentMethod === 'CASH') {
              entryAmount = t.amountPaid - t.change;
              entryType = 'DEBIT';
-           } else if (t.paymentMethod === 'QRIS') {
-             entryAmount = t.totalAmount;
-             entryType = 'DEBIT';
            } else if (t.paymentMethod === 'DEBT') {
              entryAmount = t.amountPaid; // DP jika ada
              if (entryAmount > 0) entryType = 'DEBIT';
            }
         } else if (t.type === TransactionType.IN) {
            category = 'BELANJA';
-           if (t.paymentMethod === 'CASH' || t.paymentMethod === 'QRIS') {
+           if (t.paymentMethod === 'CASH') {
               entryAmount = t.totalAmount;
               entryType = 'CREDIT';
            } else if (t.paymentMethod === 'DEBT') {
@@ -329,7 +322,7 @@ export const db = {
             id: t.id,
             date: t.timestamp,
             description: t.note || (t.type === TransactionType.OUT 
-              ? `Penjualan ${t.paymentMethod === 'QRIS' ? '(QRIS)' : ''} ${t.partyName ? '- ' + t.partyName : ''}`
+              ? `Penjualan ${t.partyName ? '- ' + t.partyName : ''}`
               : t.type === TransactionType.IN 
                 ? `Belanja Stok ${t.partyName ? 'Ke ' + t.partyName : ''}`
                 : t.type === TransactionType.EXPENSE ? 'Pengeluaran Operasional' 
@@ -358,6 +351,50 @@ export const db = {
       ...transactions.filter(t => t.partyName).map(t => t.partyName!)
     ]);
     return Array.from(names).sort();
+  },
+
+  getTopProducts: async (): Promise<TopProduct[]> => {
+    // 1. Fetch transaction items yang tipe transaksinya 'OUT' (Penjualan)
+    // Note: Karena keterbatasan join di client-side sederhana, kita ambil data manual
+    const { data: items, error } = await supabase
+      .from('transaction_items')
+      .select('barcode, name, quantity, sell_price, transaction_id');
+
+    const { data: transactions } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('type', 'KELUAR');
+
+    if (error || !items || !transactions) return [];
+
+    // Filter items yang ID transaksinya ada di list transaksi KELUAR
+    const outTxIds = new Set(transactions.map(t => t.id));
+    const soldItems = items.filter((i: any) => outTxIds.has(i.transaction_id));
+
+    // Aggregate
+    const stats = new Map<string, {name: string, qty: number, revenue: number}>();
+    
+    soldItems.forEach((item: any) => {
+      const current = stats.get(item.barcode) || { name: item.name, qty: 0, revenue: 0 };
+      stats.set(item.barcode, {
+        name: item.name,
+        qty: current.qty + item.quantity,
+        revenue: current.revenue + (item.quantity * item.sell_price)
+      });
+    });
+
+    // Get current stock for these products
+    const topBarcodes = Array.from(stats.keys());
+    const { data: products } = await supabase.from('products').select('barcode, stock').in('barcode', topBarcodes);
+    const stockMap = new Map((products || []).map((p: any) => [p.barcode, p.stock]));
+
+    return Array.from(stats.entries()).map(([barcode, data]) => ({
+      barcode,
+      name: data.name,
+      quantitySold: data.qty,
+      revenue: data.revenue,
+      stock: Number(stockMap.get(barcode) || 0)
+    })).sort((a, b) => b.quantitySold - a.quantitySold).slice(0, 10);
   },
 
   // --- STATS ---
@@ -390,7 +427,6 @@ export const db = {
         let entryAmount = 0;
         if (t.type === TransactionType.OUT) {
            if (t.paymentMethod === 'CASH') entryAmount = t.amountPaid - t.change;
-           else if (t.paymentMethod === 'QRIS') entryAmount = t.totalAmount;
            else if (t.paymentMethod === 'DEBT') entryAmount = t.amountPaid;
            cashBalance += entryAmount;
         } else if (t.type === TransactionType.IN) {

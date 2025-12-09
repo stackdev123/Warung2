@@ -1,7 +1,9 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { Transaction, TransactionType } from '../types';
-import { Search, Printer, ArrowDown, Loader2, X, Clock, FileText, QrCode, Calendar } from 'lucide-react';
+import { Search, Printer, ArrowDown, Loader2, X, Clock, FileText, Calendar } from 'lucide-react';
 
 export const History: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -111,15 +113,9 @@ export const History: React.FC = () => {
                 <p className={`font-bold text-lg ${t.type === TransactionType.OUT ? 'text-green-600' : 'text-blue-600'}`}>
                   Rp {t.totalAmount.toLocaleString()}
                 </p>
-                {t.paymentMethod === 'QRIS' ? (
-                  <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded flex items-center gap-1 justify-end ml-auto w-fit">
-                    <QrCode size={10} /> QRIS
-                  </span>
-                ) : (
-                  <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
-                    {t.paymentMethod === 'CASH' ? 'Tunai' : 'Hutang'}
-                  </span>
-                )}
+                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                  {t.paymentMethod === 'CASH' ? 'Tunai' : 'Hutang'}
+                </span>
               </div>
             </div>
 
@@ -158,7 +154,7 @@ export const History: React.FC = () => {
         )}
       </div>
 
-      {/* RECEIPT MODAL (Reused logic) */}
+      {/* RECEIPT MODAL */}
       {selectedTransaction && (
         <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-xl max-w-sm w-full shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200">
@@ -226,14 +222,6 @@ export const History: React.FC = () => {
                          <span>Rp {(selectedTransaction.totalAmount - selectedTransaction.amountPaid).toLocaleString()}</span>
                        </div>
                      )}
-                  </>
-                )}
-                {selectedTransaction.paymentMethod === 'QRIS' && (
-                  <>
-                     <div className="flex justify-between text-xs text-gray-500 mt-2">
-                       <span>Metode</span>
-                       <span className="font-bold">QRIS / Transfer</span>
-                     </div>
                   </>
                 )}
                 {selectedTransaction.paymentMethod === 'DEBT' && (

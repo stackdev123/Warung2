@@ -1,9 +1,10 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
-import { ShopStats } from '../types';
+import { ShopStats, TopProduct } from '../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
-import { TrendingUp, Wallet, RefreshCcw, Loader2, AlertCircle, ArrowUpRight, ArrowDownLeft, Box, Database, Calendar, DollarSign } from 'lucide-react';
+import { TrendingUp, Wallet, RefreshCcw, Loader2, AlertCircle, Box, Calendar, DollarSign, Package, Award } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<ShopStats>({
@@ -15,13 +16,18 @@ export const Dashboard: React.FC = () => {
     inventoryValue: 0,
     cashBalance: 0
   });
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const data = await db.getStats();
+      const [data, products] = await Promise.all([
+        db.getStats(),
+        db.getTopProducts()
+      ]);
       setStats(data);
+      setTopProducts(products);
     } catch (e) {
       console.error("Gagal ambil data", e);
     } finally {
@@ -44,16 +50,14 @@ export const Dashboard: React.FC = () => {
 
   const currentDate = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  // Data untuk Grafik Pie Keuangan
+  // Data untuk Grafik Pie Keuangan (Diperbaiki agar tidak error jika 0)
   const financeData = [
-    { name: 'Kas Tunai', value: Math.max(0, stats.cashBalance), color: '#10b981' }, // Emerald
-    { name: 'Piutang', value: stats.totalReceivable, color: '#3b82f6' }, // Blue
-    { name: 'Hutang', value: stats.totalPayable, color: '#ef4444' }, // Red
-  ];
+    { name: 'Saldo Kas', value: Math.max(0, stats.cashBalance), color: '#10b981' }, // Emerald
+    { name: 'Piutang (Aset)', value: Math.max(0, stats.totalReceivable), color: '#3b82f6' }, // Blue
+    { name: 'Hutang (Kewajiban)', value: Math.max(0, stats.totalPayable), color: '#ef4444' }, // Red
+  ].filter(d => d.value > 0);
 
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-    return `${(percent * 100).toFixed(0)}%`;
-  };
+  const hasFinanceData = financeData.length > 0;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10">
@@ -121,81 +125,119 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Sales Charts */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-96">
+        {/* Left Column: Top Products (New Feature) */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-auto">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-              <TrendingUp size={20} className="text-emerald-500"/> Statistik Penjualan
+              <Award size={20} className="text-yellow-500"/> Produk Terlaris (Top 10)
             </h3>
-            <span className="text-xs font-medium px-2 py-1 bg-gray-100 rounded text-gray-500">7 Hari Terakhir</span>
+            <span className="text-xs font-medium px-2 py-1 bg-gray-100 rounded text-gray-500">All Time</span>
           </div>
-          <ResponsiveContainer width="100%" height="85%">
-            <BarChart data={[
-              {name: 'Sen', val: stats.totalSalesToday * 0.8},
-              {name: 'Sel', val: stats.totalSalesToday * 0.5},
-              {name: 'Rab', val: stats.totalSalesToday * 1.2},
-              {name: 'Kam', val: stats.totalSalesToday * 0.9},
-              {name: 'Jum', val: stats.totalSalesToday},
-              {name: 'Sab', val: stats.totalSalesToday * 1.5},
-              {name: 'Min', val: stats.totalSalesToday * 1.1},
-            ]}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
-              <YAxis hide />
-              <Tooltip 
-                cursor={{fill: '#f0fdf4'}} 
-                contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px'}} 
-              />
-              <Bar dataKey="val" fill="#10b981" radius={[6, 6, 0, 0]} barSize={40} />
-            </BarChart>
-          </ResponsiveContainer>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-gray-400 uppercase bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 rounded-l-lg">Produk</th>
+                  <th className="px-4 py-3 text-center">Terjual</th>
+                  <th className="px-4 py-3 text-right">Pendapatan</th>
+                  <th className="px-4 py-3 text-center rounded-r-lg">Sisa Stok</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {topProducts.length === 0 ? (
+                   <tr>
+                     <td colSpan={4} className="text-center py-8 text-gray-400">
+                       Belum ada data penjualan.
+                     </td>
+                   </tr>
+                ) : (
+                  topProducts.map((p, index) => (
+                    <tr key={p.barcode} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-gray-800">
+                         <div className="flex items-center gap-3">
+                           <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${index < 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>
+                             {index + 1}
+                           </span>
+                           <div>
+                             <p className="line-clamp-1">{p.name}</p>
+                             <p className="text-[10px] text-gray-400 font-mono">{p.barcode}</p>
+                           </div>
+                         </div>
+                      </td>
+                      <td className="px-4 py-3 text-center font-bold text-primary bg-primary/5 rounded-lg">
+                        {p.quantitySold}
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-600">
+                        Rp {p.revenue.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                         <span className={`px-2 py-1 rounded text-xs font-bold ${p.stock < 5 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                           {p.stock}
+                         </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Right Column: Finance Pie Chart */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-96">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-auto lg:h-[500px]">
           <h3 className="font-bold text-gray-800 text-lg mb-2 flex items-center gap-2">
             <DollarSign size={20} className="text-blue-500"/> Posisi Keuangan
           </h3>
           <p className="text-xs text-gray-400 mb-4">Komposisi Kas vs Kewajiban</p>
           
-          <div className="flex-1 min-h-0 relative">
-             <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={financeData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    labelLine={false}
-                  >
-                    {financeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                     formatter={(value: number) => `Rp ${value.toLocaleString()}`}
-                     contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                  />
-                  <Legend 
-                     verticalAlign="bottom" 
-                     height={36}
-                     iconType="circle"
-                     iconSize={10}
-                     wrapperStyle={{ fontSize: '12px', fontWeight: 600 }}
-                  />
-                </PieChart>
-             </ResponsiveContainer>
+          <div className="flex-1 min-h-[250px] relative">
+             {hasFinanceData ? (
+               <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={financeData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                      labelLine={false}
+                    >
+                      {financeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                       formatter={(value: number) => `Rp ${value.toLocaleString()}`}
+                       contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                    />
+                    <Legend 
+                       verticalAlign="bottom" 
+                       height={36}
+                       iconType="circle"
+                       iconSize={10}
+                       wrapperStyle={{ fontSize: '12px', fontWeight: 600 }}
+                    />
+                  </PieChart>
+               </ResponsiveContainer>
+             ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-300">
+                   <DollarSign size={48} className="mb-2 opacity-20" />
+                   <p className="text-sm">Belum ada data keuangan</p>
+                </div>
+             )}
              
              {/* Center Text Overlay */}
-             <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
-                <div className="text-center">
-                   <p className="text-[10px] text-gray-400 font-bold uppercase">Saldo Kas</p>
-                   <p className="text-sm font-bold text-gray-800">Rp {stats.cashBalance.toLocaleString()}</p>
-                </div>
-             </div>
+             {hasFinanceData && (
+               <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
+                  <div className="text-center">
+                     <p className="text-[10px] text-gray-400 font-bold uppercase">Saldo Kas</p>
+                     <p className="text-sm font-bold text-gray-800">Rp {stats.cashBalance.toLocaleString()}</p>
+                  </div>
+               </div>
+             )}
           </div>
           
           {/* Legend Details */}

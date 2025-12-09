@@ -1,9 +1,10 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { Product, CartItem, Transaction, TransactionType, DebtType } from '../types';
 import { Scanner } from '../components/Scanner';
-import { Scan, ShoppingCart, Minus, Plus, Trash, CheckCircle, Banknote, BookOpen, X, Search, Package, Users, Loader2, Printer, History, FileText, QrCode, Smartphone, ArrowRight } from 'lucide-react';
+import { Scan, ShoppingCart, Minus, Plus, Trash, CheckCircle, Banknote, BookOpen, X, Search, Package, Users, Loader2, Printer, History, FileText, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const POS: React.FC = () => {
@@ -25,7 +26,7 @@ export const POS: React.FC = () => {
 
   // Payment State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'DEBT' | 'QRIS'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'DEBT'>('CASH');
   const [amountPaid, setAmountPaid] = useState<string>(''); 
   const [partyName, setPartyName] = useState(''); 
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -36,9 +37,6 @@ export const POS: React.FC = () => {
 
   const [savedParties, setSavedParties] = useState<string[]>([]);
   const [showPartySuggestions, setShowPartySuggestions] = useState(false);
-
-  // Account Config
-  const REKENING_NO = "2310599215";
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -152,7 +150,8 @@ export const POS: React.FC = () => {
     const totalAmount = calculateTotal();
     let paid = parseFloat(amountPaid) || 0;
 
-    if (paymentMethod === 'QRIS' || (mode === TransactionType.IN && paymentMethod === 'CASH')) {
+    // Untuk Restock CASH, dianggap lunas (Paid = Total)
+    if (mode === TransactionType.IN && paymentMethod === 'CASH') {
       paid = totalAmount; 
     }
     
@@ -602,12 +601,6 @@ export const POS: React.FC = () => {
                   <Banknote size={24} /> Tunai
                 </button>
                 <button 
-                  onClick={() => setPaymentMethod('QRIS')}
-                  className={`flex-1 min-w-[100px] py-4 px-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 font-bold transition-all ${paymentMethod === 'QRIS' ? 'border-purple-500 bg-purple-50 text-purple-700 shadow-sm' : 'border-gray-100 text-gray-400 hover:bg-gray-50'}`}
-                >
-                  <QrCode size={24} /> QRIS
-                </button>
-                <button 
                   onClick={() => { setPaymentMethod('DEBT'); setAmountPaid('0'); }}
                   className={`flex-1 min-w-[100px] py-4 px-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 font-bold transition-all ${paymentMethod === 'DEBT' ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-sm' : 'border-gray-100 text-gray-400 hover:bg-gray-50'}`}
                 >
@@ -666,37 +659,19 @@ export const POS: React.FC = () => {
                         {renderPartyInput('Nama Pelanggan', true)}
                       </div>
                     )}
-
-                    {paymentMethod === 'QRIS' && (
-                       <div className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-purple-50 to-white rounded-2xl border border-purple-100 text-center animate-in zoom-in-95 shadow-inner">
-                         <h3 className="text-purple-800 font-bold mb-4 flex items-center gap-2"><Smartphone size={20}/> Scan QR untuk Transfer</h3>
-                         <div className="bg-white p-3 rounded-xl border border-gray-200 mb-4 shadow-sm">
-                           <img 
-                             src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${REKENING_NO}`} 
-                             alt="QR Code" 
-                             className="w-40 h-40"
-                           />
-                         </div>
-                         <p className="text-xs text-purple-600 mb-1 font-bold uppercase tracking-wide">Nomor Rekening</p>
-                         <p className="text-2xl font-mono font-bold text-gray-800 select-all tracking-wider">{REKENING_NO}</p>
-                         <div className="flex items-center gap-2 mt-4 text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
-                            <CheckCircle size={12} /> Pastikan dana masuk sebelum konfirmasi
-                         </div>
-                       </div>
-                    )}
                   </>
                 )}
 
                 {mode === TransactionType.IN && (
                   <>
-                     {paymentMethod === 'CASH' || paymentMethod === 'QRIS' ? (
+                     {paymentMethod === 'CASH' ? (
                        <div className="bg-gray-50 border border-gray-200 p-8 rounded-2xl flex flex-col items-center justify-center text-center space-y-3">
                          <div className="p-3 bg-green-100 rounded-full text-green-600 mb-2">
                             <CheckCircle size={32} />
                          </div>
                          <h3 className="font-bold text-gray-800 text-lg">Pembayaran Lunas</h3>
                          <p className="text-sm text-gray-500">
-                            Metode: <span className="font-bold text-gray-700">{paymentMethod === 'QRIS' ? 'Transfer / QRIS' : 'Tunai'}</span>
+                            Metode: <span className="font-bold text-gray-700">Tunai</span>
                          </p>
                        </div>
                      ) : (
@@ -711,12 +686,12 @@ export const POS: React.FC = () => {
                   onClick={handleConfirmPayment}
                   disabled={isProcessingPayment}
                   className={`w-full py-5 mt-4 rounded-2xl text-white font-bold text-xl shadow-xl flex justify-center items-center gap-3 transition-transform active:scale-[0.98] ${
-                     ((paymentMethod === 'CASH' || paymentMethod === 'QRIS') && (mode === TransactionType.IN || (paymentMethod === 'QRIS') || calcState.status === 'CHANGE')) 
+                     ((paymentMethod === 'CASH') && (mode === TransactionType.IN || calcState.status === 'CHANGE')) 
                       ? 'bg-gradient-to-r from-emerald-600 to-teal-600 shadow-emerald-200' 
                       : 'bg-gradient-to-r from-orange-500 to-red-500 shadow-orange-200'
                   }`}
                 >
-                  {isProcessingPayment ? <Loader2 className="animate-spin" /> : (paymentMethod === 'QRIS' ? 'Konfirmasi Lunas' : 'Konfirmasi Pembayaran')}
+                  {isProcessingPayment ? <Loader2 className="animate-spin" /> : 'Konfirmasi Pembayaran'}
                 </button>
               </div>
             </div>
@@ -724,7 +699,7 @@ export const POS: React.FC = () => {
         </div>
       )}
 
-      {/* RECEIPT MODAL (Unchanged Logic, visual update handled by CSS mostly) */}
+      {/* RECEIPT MODAL */}
       {showReceipt && lastTransaction && (
         <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-xl max-w-sm w-full shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200">
@@ -791,17 +766,6 @@ export const POS: React.FC = () => {
                          <span>Rp {(lastTransaction.totalAmount - lastTransaction.amountPaid).toLocaleString()}</span>
                        </div>
                      )}
-                  </>
-                )}
-                {lastTransaction.id !== 'DRAFT' && lastTransaction.paymentMethod === 'QRIS' && (
-                  <>
-                     <div className="flex justify-between text-xs text-gray-500 mt-2">
-                       <span>Metode</span>
-                       <span className="font-bold">QRIS / Transfer</span>
-                     </div>
-                     <div className="text-center text-xs text-gray-400 mt-1">
-                       Rek: {REKENING_NO}
-                     </div>
                   </>
                 )}
                 {lastTransaction.id !== 'DRAFT' && lastTransaction.paymentMethod === 'DEBT' && (
