@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { ShopStats, TopProduct } from '../types';
@@ -76,12 +74,12 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Stats Grid with Gradients */}
+      {/* Main Stats Grid with Gradients & Animations */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Card 1: Omzet */}
-        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-lg shadow-emerald-200 text-white relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-lg shadow-emerald-200 text-white relative overflow-hidden group hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 cursor-default">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
             <TrendingUp size={100} />
           </div>
           <div className="relative z-10">
@@ -91,8 +89,8 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Card 2: Profit */}
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-6 rounded-2xl shadow-lg shadow-blue-200 text-white relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-6 rounded-2xl shadow-lg shadow-blue-200 text-white relative overflow-hidden group hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 cursor-default">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
             <Wallet size={100} />
           </div>
           <div className="relative z-10">
@@ -102,8 +100,8 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Card 3: Aset */}
-        <div className="bg-gradient-to-br from-violet-600 to-purple-600 p-6 rounded-2xl shadow-lg shadow-purple-200 text-white relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+        <div className="bg-gradient-to-br from-violet-600 to-purple-600 p-6 rounded-2xl shadow-lg shadow-purple-200 text-white relative overflow-hidden group hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 cursor-default">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
             <Box size={100} />
           </div>
           <div className="relative z-10">
@@ -113,8 +111,8 @@ export const Dashboard: React.FC = () => {
         </div>
 
          {/* Card 4: Stok Alert */}
-         <div className="bg-gradient-to-br from-orange-500 to-red-500 p-6 rounded-2xl shadow-lg shadow-orange-200 text-white relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+         <div className="bg-gradient-to-br from-orange-500 to-red-500 p-6 rounded-2xl shadow-lg shadow-orange-200 text-white relative overflow-hidden group hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 cursor-default">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
             <AlertCircle size={100} />
           </div>
           <div className="relative z-10">
@@ -126,7 +124,7 @@ export const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Top Products (New Feature) */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-auto">
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-auto hover:shadow-md transition-shadow duration-300">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
               <Award size={20} className="text-yellow-500"/> Produk Terlaris (Top 10)
@@ -185,7 +183,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Right Column: Finance Pie Chart */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-auto lg:h-[500px]">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-auto lg:h-[500px] hover:shadow-md transition-shadow duration-300">
           <h3 className="font-bold text-gray-800 text-lg mb-2 flex items-center gap-2">
             <DollarSign size={20} className="text-blue-500"/> Posisi Keuangan
           </h3>

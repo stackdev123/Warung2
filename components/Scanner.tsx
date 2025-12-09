@@ -211,7 +211,7 @@ export const Scanner: React.FC<ScannerProps> = ({
             onChange={(e) => setManualCode(e.target.value)}
             placeholder="Ketik kode manual..." 
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm font-medium"
-            autoFocus={!hasPermission}
+            // REMOVED autoFocus HERE to prevent mobile keyboard popup
           />
           <button type="submit" className="bg-primary text-white px-4 rounded-lg font-bold text-sm">
             OK
