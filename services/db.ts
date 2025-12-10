@@ -8,7 +8,7 @@ import { Product, Transaction, DebtRecord, TransactionType, DebtType, ShopStats,
 const SUPABASE_URL = 'https://vqmfbnqjrdyijnpaywug.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_-MgxWwIiJHBhq1594eIdrw_NUSZKpQc';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const KEYS = {
   THEME: 'wp_theme_color'
@@ -97,6 +97,8 @@ export const db = {
       type: t.type as TransactionType,
       timestamp: Number(t.timestamp),
       totalAmount: Number(t.total_amount),
+      subtotal: t.subtotal ? Number(t.subtotal) : Number(t.total_amount), // Fallback
+      discount: t.discount ? Number(t.discount) : 0,
       paymentMethod: t.payment_method,
       amountPaid: Number(t.amount_paid),
       change: Number(t.change),
@@ -147,6 +149,8 @@ export const db = {
       type: t.type as TransactionType,
       timestamp: Number(t.timestamp),
       totalAmount: Number(t.total_amount),
+      subtotal: t.subtotal ? Number(t.subtotal) : Number(t.total_amount),
+      discount: t.discount ? Number(t.discount) : 0,
       paymentMethod: t.payment_method,
       amountPaid: Number(t.amount_paid),
       change: Number(t.change),
@@ -173,6 +177,8 @@ export const db = {
       type: transaction.type,
       timestamp: transaction.timestamp,
       total_amount: transaction.totalAmount,
+      subtotal: transaction.subtotal || transaction.totalAmount,
+      discount: transaction.discount || 0,
       note: transaction.note,
       payment_method: transaction.paymentMethod,
       amount_paid: transaction.amountPaid,

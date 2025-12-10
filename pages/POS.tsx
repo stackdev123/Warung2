@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../services/db';
 import { Product, CartItem, Transaction, TransactionType, DebtType } from '../types';
 import { Scanner } from '../components/Scanner';
-import { Scan, ShoppingCart, Minus, Plus, Trash, CheckCircle, Banknote, BookOpen, X, Search, Package, Users, Loader2, Printer, History, FileText, ArrowRight, LogOut } from 'lucide-react';
+import { Scan, ShoppingCart, Minus, Plus, Trash, CheckCircle, Banknote, BookOpen, X, Search, Package, Users, Loader2, Printer, History, FileText, ArrowRight, LogOut, Tag, Percent, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export const POS: React.FC = () => {
@@ -29,6 +29,11 @@ export const POS: React.FC = () => {
   const [amountPaid, setAmountPaid] = useState<string>(''); 
   const [partyName, setPartyName] = useState(''); 
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // Discount State
+  const [showDiscountInput, setShowDiscountInput] = useState(false);
+  const [discountType, setDiscountType] = useState<'NOMINAL' | 'PERCENT'>('NOMINAL');
+  const [discountValue, setDiscountValue] = useState<string>('');
   
   // Receipt State
   const [showReceipt, setShowReceipt] = useState(false);
@@ -36,6 +41,9 @@ export const POS: React.FC = () => {
 
   const [savedParties, setSavedParties] = useState<string[]>([]);
   const [showPartySuggestions, setShowPartySuggestions] = useState(false);
+
+  // Audio Reference for Instant Beep
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Handle Mode Switch via Navigation State (e.g. from Master Data)
   useEffect(() => {
@@ -47,7 +55,15 @@ export const POS: React.FC = () => {
     }
   }, [location]);
 
+  // Preload Audio on Mount
   useEffect(() => {
+    const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+    audio.volume = 0.5;
+    audio.preload = 'auto';
+    // Trigger load immediately
+    audio.load();
+    audioRef.current = audio;
+
     const fetchProducts = async () => {
       setIsLoadingProducts(true);
       const data = await db.getProducts();
@@ -75,9 +91,11 @@ export const POS: React.FC = () => {
   }, [scanFeedback]);
 
   const playBeep = () => {
-    const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-    audio.volume = 0.5;
-    audio.play().catch(e => console.log("Audio play failed", e));
+    if (audioRef.current) {
+      // Reset time to 0 to allow rapid re-playing without waiting for previous sound to finish
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => console.log("Audio play failed (interaction required?)", e));
+    }
   };
 
   const handleScan = (code: string) => {
@@ -88,7 +106,7 @@ export const POS: React.FC = () => {
       addToCart(product);
       setScanFeedback(`${product.name} (+1)`);
     } else {
-      playBeep();
+      playBeep(); // Beep also on not found, maybe distinct sound later
       alert(`Produk dengan kode ${code} tidak ditemukan!`);
     }
   };
@@ -111,7 +129,17 @@ export const POS: React.FC = () => {
     setCart(prev => prev.map(item => {
       if (item.barcode === barcode) {
         const newQty = item.quantity + delta;
-        return newQty > 0 ? { ...item, quantity: newQty } : item;
+        return newQty >= 0 ? { ...item, quantity: newQty } : item;
+      }
+      return item;
+    }).filter(item => item.quantity > 0 || delta > 0)); 
+    // allow setting to 0 via manual input? maybe. but minus button should allow going down, removeItem handles delete
+  };
+
+  const setItemQty = (barcode: string, qty: number) => {
+    setCart(prev => prev.map(item => {
+      if (item.barcode === barcode) {
+        return { ...item, quantity: qty };
       }
       return item;
     }));
@@ -121,11 +149,32 @@ export const POS: React.FC = () => {
     setCart(prev => prev.filter(item => item.barcode !== barcode));
   };
 
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     return cart.reduce((sum, item) => {
       const price = mode === TransactionType.OUT ? item.sellPrice : item.buyPrice;
       return sum + (price * item.quantity);
     }, 0);
+  };
+
+  // Helper Calculation for Payment
+  const getTotals = () => {
+    const subtotal = calculateSubtotal();
+    let discount = 0;
+    const val = parseFloat(discountValue) || 0;
+    
+    if (val > 0) {
+      if (discountType === 'PERCENT') {
+        discount = Math.round(subtotal * (val / 100));
+      } else {
+        discount = val;
+      }
+    }
+    
+    // Ensure discount doesn't exceed subtotal
+    if (discount > subtotal) discount = subtotal;
+    
+    const finalTotal = subtotal - discount;
+    return { subtotal, discount, finalTotal };
   };
 
   const openCheckout = () => {
@@ -133,19 +182,24 @@ export const POS: React.FC = () => {
     setPaymentMethod('CASH');
     setAmountPaid('');
     setPartyName('');
+    setDiscountValue('');
+    setDiscountType('NOMINAL');
+    setShowDiscountInput(false);
     setIsPaymentModalOpen(true);
   };
 
   const handlePrintBill = () => {
     if (cart.length === 0) return;
-    const totalAmount = calculateTotal();
+    const { subtotal, discount, finalTotal } = getTotals();
     
     const billTransaction: Transaction = {
       id: 'DRAFT', 
       type: mode,
       timestamp: Date.now(),
       items: [...cart],
-      totalAmount,
+      totalAmount: finalTotal,
+      subtotal: subtotal,
+      discount: discount,
       paymentMethod: 'CASH',
       amountPaid: 0,
       change: 0,
@@ -156,15 +210,15 @@ export const POS: React.FC = () => {
   };
 
   const handleConfirmPayment = async () => {
-    const totalAmount = calculateTotal();
+    const { subtotal, discount, finalTotal } = getTotals();
     let paid = parseFloat(amountPaid) || 0;
 
     // Untuk Restock CASH, dianggap lunas (Paid = Total)
     if (mode === TransactionType.IN && paymentMethod === 'CASH') {
-      paid = totalAmount; 
+      paid = finalTotal; 
     }
     
-    const isPartialPayment = mode === TransactionType.OUT && paymentMethod === 'CASH' && paid < totalAmount;
+    const isPartialPayment = mode === TransactionType.OUT && paymentMethod === 'CASH' && paid < finalTotal;
     const isDebtInvolved = paymentMethod === 'DEBT' || isPartialPayment;
 
     if (isDebtInvolved && !partyName.trim()) {
@@ -176,19 +230,21 @@ export const POS: React.FC = () => {
 
     let debtAmount = 0;
     if (paymentMethod === 'DEBT') {
-      debtAmount = totalAmount; 
+      debtAmount = finalTotal; 
     } else if (isPartialPayment) {
-      debtAmount = totalAmount - paid;
+      debtAmount = finalTotal - paid;
     }
 
-    const change = (paymentMethod === 'CASH' && paid >= totalAmount) ? paid - totalAmount : 0;
+    const change = (paymentMethod === 'CASH' && paid >= finalTotal) ? paid - finalTotal : 0;
 
     const transaction: Transaction = {
       id: Date.now().toString(),
       type: mode,
       timestamp: Date.now(),
       items: [...cart], 
-      totalAmount,
+      totalAmount: finalTotal,
+      subtotal: subtotal,
+      discount: discount,
       paymentMethod: isDebtInvolved ? 'DEBT' : paymentMethod, 
       amountPaid: paid,
       change,
@@ -205,7 +261,7 @@ export const POS: React.FC = () => {
           partyName: partyName,
           amount: debtAmount, 
           description: isPartialPayment 
-            ? `Sisa Kurang Bayar (Total: ${totalAmount}, Bayar: ${paid})` 
+            ? `Sisa Kurang Bayar (Total: ${finalTotal}, Bayar: ${paid})` 
             : `Transaksi ${mode === TransactionType.OUT ? 'Jual' : 'Restock'} Full Hutang`,
           dueDate: Date.now() + (7 * 24 * 60 * 60 * 1000),
           isPaid: false,
@@ -251,10 +307,11 @@ export const POS: React.FC = () => {
     navigate('/pos', { replace: true, state: {} });
   };
 
-  const total = calculateTotal();
+  const { subtotal, discount, finalTotal } = getTotals();
+  
   const getCalculationState = () => {
     const paid = parseFloat(amountPaid) || 0;
-    const diff = paid - total;
+    const diff = paid - finalTotal;
     
     if (diff >= 0) {
       return { status: 'CHANGE', value: diff, label: 'Kembalian' };
@@ -278,7 +335,7 @@ export const POS: React.FC = () => {
     return Array.from(suggestions).sort((a, b) => a - b).slice(0, 5);
   };
   
-  const paymentSuggestions = getPaymentSuggestions(total);
+  const paymentSuggestions = getPaymentSuggestions(finalTotal);
   const calcState = getCalculationState();
 
   const filteredProducts = allProducts.filter(p => 
@@ -470,8 +527,6 @@ export const POS: React.FC = () => {
              </div>
           </div>
           
-          {/* Removed Transaction Type Toggle - Default is Sales, Restock triggered from Master Data */}
-
           <div className="flex gap-2">
             <button 
               onClick={() => setIsScannerOpen(!isScannerOpen)} 
@@ -533,7 +588,25 @@ export const POS: React.FC = () => {
                 <div className="flex items-center gap-3">
                    <div className="flex items-center bg-gray-100 rounded-lg p-1">
                       <button onClick={() => updateQty(item.barcode, -1)} className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-primary active:scale-90 transition-all"><Minus size={14} /></button>
-                      <span className="font-bold text-sm w-8 text-center">{item.quantity}</span>
+                      <div className="w-10 flex items-center justify-center">
+                        <input 
+                           type="number"
+                           min="1"
+                           className="w-full text-center bg-transparent font-bold text-sm focus:outline-none focus:border-b-2 focus:border-primary p-0"
+                           value={item.quantity === 0 ? '' : item.quantity}
+                           onChange={(e) => {
+                             const val = e.target.value;
+                             const num = parseInt(val);
+                             setItemQty(item.barcode, isNaN(num) ? 0 : num);
+                           }}
+                           onBlur={(e) => {
+                              if (parseInt(e.target.value) === 0) {
+                                 // Optionally remove or reset to 1
+                                 // removeItem(item.barcode); 
+                              }
+                           }}
+                        />
+                      </div>
                       <button onClick={() => updateQty(item.barcode, 1)} className="w-7 h-7 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-primary active:scale-90 transition-all"><Plus size={14} /></button>
                    </div>
                   <button onClick={() => removeItem(item.barcode)} className="text-gray-300 hover:text-red-500 ml-1 p-2 rounded-full hover:bg-red-50 transition-colors"><Trash size={18} /></button>
@@ -547,7 +620,7 @@ export const POS: React.FC = () => {
         <div className="p-4 md:p-5 bg-white border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-20 shrink-0 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
           <div className="flex justify-between items-end mb-4">
             <span className="text-gray-500 font-medium">{mode === TransactionType.IN ? 'Total Belanja' : 'Total Tagihan'}</span>
-            <span className="text-3xl font-bold text-gray-800">Rp {total.toLocaleString()}</span>
+            <span className="text-3xl font-bold text-gray-800">Rp {subtotal.toLocaleString()}</span>
           </div>
           
           <div className="flex gap-3">
@@ -653,12 +726,15 @@ export const POS: React.FC = () => {
             </div>
             
             <div className="p-6 overflow-y-auto">
-              <div className="text-center mb-8">
-                <p className="text-gray-500 text-sm font-medium mb-1 uppercase tracking-wide">Total Tagihan</p>
-                <p className="text-5xl font-bold text-gray-900 tracking-tight">Rp {total.toLocaleString()}</p>
+              <div className="text-center mb-6">
+                <p className="text-gray-500 text-sm font-medium mb-1 uppercase tracking-wide">Total Akhir</p>
+                <p className="text-5xl font-bold text-gray-900 tracking-tight">Rp {finalTotal.toLocaleString()}</p>
+                {discount > 0 && (
+                   <p className="text-red-500 font-bold text-sm mt-1 animate-pulse">Hemat Rp {discount.toLocaleString()}</p>
+                )}
               </div>
 
-              <div className="flex gap-3 mb-8 overflow-x-auto no-scrollbar pb-2">
+              <div className="flex gap-3 mb-6 overflow-x-auto no-scrollbar pb-2">
                 <button 
                   onClick={() => setPaymentMethod('CASH')}
                   className={`flex-1 min-w-[100px] py-4 px-4 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 font-bold transition-all ${paymentMethod === 'CASH' ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' : 'border-gray-100 text-gray-400 hover:bg-gray-50'}`}
@@ -700,10 +776,61 @@ export const POS: React.FC = () => {
                                  onClick={() => setAmountPaid(amount.toString())}
                                  className="px-4 py-2 bg-white hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 transition-all whitespace-nowrap flex-shrink-0 shadow-sm"
                                >
-                                 {amount === total ? 'Uang Pas' : `Rp ${amount.toLocaleString()}`}
+                                 {amount === finalTotal ? 'Uang Pas' : `Rp ${amount.toLocaleString()}`}
                                </button>
                              ))}
                           </div>
+                        </div>
+
+                        {/* SECTION DISKON - MOVED HERE (Toggleable) */}
+                        <div className="animate-in fade-in slide-in-from-top-1">
+                          {!showDiscountInput ? (
+                             <button 
+                               type="button"
+                               onClick={() => setShowDiscountInput(true)}
+                               className="w-full py-3 border border-dashed border-gray-300 rounded-xl text-gray-500 font-bold text-sm hover:bg-gray-50 hover:text-primary hover:border-primary transition-all flex items-center justify-center gap-2"
+                             >
+                               <Tag size={16} /> Tambah Diskon
+                             </button>
+                          ) : (
+                            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                              <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 flex justify-between items-center cursor-pointer" onClick={() => setShowDiscountInput(false)}>
+                                <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1 cursor-pointer"><Tag size={12}/> Diskon</label>
+                                <ChevronUp size={16} className="text-gray-400"/>
+                              </div>
+                              <div className="p-3">
+                                 <div className="flex gap-2 mb-2">
+                                    <button 
+                                      onClick={() => setDiscountType('NOMINAL')}
+                                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all border ${discountType === 'NOMINAL' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-gray-50 text-gray-500 border-transparent'}`}
+                                    >
+                                      Nominal (Rp)
+                                    </button>
+                                    <button 
+                                      onClick={() => setDiscountType('PERCENT')}
+                                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all border ${discountType === 'PERCENT' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-gray-50 text-gray-500 border-transparent'}`}
+                                    >
+                                      Persen (%)
+                                    </button>
+                                 </div>
+                                 <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">
+                                      {discountType === 'NOMINAL' ? 'Rp' : ''}
+                                    </span>
+                                    <input 
+                                      type="number" 
+                                      value={discountValue}
+                                      onChange={(e) => setDiscountValue(e.target.value)}
+                                      className={`w-full ${discountType === 'NOMINAL' ? 'pl-9' : 'pl-3'} pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-lg font-bold outline-none focus:border-primary focus:bg-white transition-all`}
+                                      placeholder={discountType === 'NOMINAL' ? '0' : '0'}
+                                    />
+                                    {discountType === 'PERCENT' && (
+                                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">%</span>
+                                    )}
+                                 </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         <div className={`p-5 rounded-2xl flex justify-between items-center border-2 ${calcState.status === 'CHANGE' ? 'bg-emerald-50 border-emerald-100' : 'bg-orange-50 border-orange-100'}`}>
@@ -811,7 +938,21 @@ export const POS: React.FC = () => {
               </div>
 
               <div className="border-t border-dashed border-gray-300 pt-2 space-y-1">
-                <div className="flex justify-between font-bold text-lg">
+                 {/* Subtotal if Discount Exists */}
+                 {(lastTransaction.discount ?? 0) > 0 && (
+                   <div className="flex justify-between text-gray-500 text-xs">
+                      <span>Subtotal</span>
+                      <span>Rp {(lastTransaction.subtotal || lastTransaction.totalAmount + (lastTransaction.discount || 0)).toLocaleString()}</span>
+                   </div>
+                 )}
+                 {(lastTransaction.discount ?? 0) > 0 && (
+                   <div className="flex justify-between text-red-500 font-bold text-xs">
+                      <span>Diskon</span>
+                      <span>- Rp {(lastTransaction.discount || 0).toLocaleString()}</span>
+                   </div>
+                 )}
+                
+                <div className="flex justify-between font-bold text-lg border-t border-dashed border-gray-300 pt-1 mt-1">
                   <span>Total</span>
                   <span>Rp {lastTransaction.totalAmount.toLocaleString()}</span>
                 </div>

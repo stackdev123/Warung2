@@ -15,6 +15,10 @@ export const MasterData: React.FC = () => {
   const [loadingData, setLoadingData] = useState(false);
   const [focusField, setFocusField] = useState<'barcode' | 'name' | 'stock'>('name');
 
+  // Input states for Dus/Pcs to separate UI from logic
+  const [dusValue, setDusValue] = useState<string>('');
+  const [pcsValue, setPcsValue] = useState<string>('');
+
   // Filter States
   const [categoryFilter, setCategoryFilter] = useState<string>('Semua');
   const [stockFilter, setStockFilter] = useState<'ALL' | 'LOW'>('ALL');
@@ -51,7 +55,7 @@ export const MasterData: React.FC = () => {
   };
 
   const handleAdd = (barcode: string = '') => {
-    setEditingProduct({ 
+    const newProd = { 
       barcode, 
       name: '', 
       category: categoryFilter !== 'Semua' ? categoryFilter : 'Lainnya', 
@@ -59,13 +63,25 @@ export const MasterData: React.FC = () => {
       sellPrice: 0, 
       stock: 0,
       pcsPerCarton: 1
-    });
+    };
+    setEditingProduct(newProd);
+    
+    // Init local inputs
+    setDusValue('');
+    setPcsValue('');
+
     setFocusField(barcode ? 'name' : 'barcode');
     setIsModalOpen(true);
   };
 
   const handleEdit = (product: Product) => {
     setEditingProduct({ ...product });
+    
+    // Init local inputs
+    const { dus, pcs } = getStockBreakdown(product.stock, product.pcsPerCarton || 1);
+    setDusValue(dus === 0 ? '' : dus.toString());
+    setPcsValue(pcs === 0 ? '' : pcs.toString());
+
     setIsModalOpen(true);
   };
 
@@ -100,6 +116,14 @@ export const MasterData: React.FC = () => {
     const dus = Math.floor(stock / (pcsPerCarton || 1));
     const pcs = stock % (pcsPerCarton || 1);
     return { dus, pcs };
+  };
+
+  const updateStockFromInputs = (newDusVal: string, newPcsVal: string) => {
+    if (!editingProduct) return;
+    const d = parseInt(newDusVal) || 0;
+    const p = parseInt(newPcsVal) || 0;
+    const total = (d * (editingProduct.pcsPerCarton || 1)) + p;
+    setEditingProduct(prev => prev ? ({ ...prev, stock: total }) : null);
   };
 
   // Unique Categories for Filter
@@ -426,12 +450,11 @@ export const MasterData: React.FC = () => {
                     <div className="relative">
                       <input 
                         type="number" 
-                        value={getStockBreakdown(editingProduct.stock || 0, editingProduct.pcsPerCarton || 1).dus} 
+                        value={dusValue} 
                         onChange={e => {
-                          const newDus = parseInt(e.target.value) || 0;
-                          const currentPcs = (editingProduct.stock || 0) % (editingProduct.pcsPerCarton || 1);
-                          const newTotal = (newDus * (editingProduct.pcsPerCarton || 1)) + currentPcs;
-                          setEditingProduct({...editingProduct, stock: newTotal});
+                          const val = e.target.value;
+                          setDusValue(val);
+                          updateStockFromInputs(val, pcsValue);
                         }}
                         className="w-full pl-4 pr-12 p-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-bold text-lg"
                         placeholder="0"
@@ -442,12 +465,11 @@ export const MasterData: React.FC = () => {
                       <input 
                         ref={stockInputRef}
                         type="number" 
-                        value={getStockBreakdown(editingProduct.stock || 0, editingProduct.pcsPerCarton || 1).pcs} 
+                        value={pcsValue} 
                         onChange={e => {
-                          const newPcs = parseInt(e.target.value) || 0;
-                          const currentDus = Math.floor((editingProduct.stock || 0) / (editingProduct.pcsPerCarton || 1));
-                          const newTotal = (currentDus * (editingProduct.pcsPerCarton || 1)) + newPcs;
-                          setEditingProduct({...editingProduct, stock: newTotal});
+                           const val = e.target.value;
+                           setPcsValue(val);
+                           updateStockFromInputs(dusValue, val);
                         }}
                         className="w-full pl-4 pr-12 p-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-bold text-lg"
                         placeholder="0"

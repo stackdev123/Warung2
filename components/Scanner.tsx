@@ -27,7 +27,10 @@ export const Scanner: React.FC<ScannerProps> = ({
   // Logic untuk mencegah double-scan instan pada kode yang sama
   const lastScannedCodeRef = useRef<string | null>(null);
   const lastScannedTimeRef = useRef<number>(0);
-  const SCAN_DELAY = 1500; // Jeda waktu (ms) sebelum bisa scan kode yang SAMA lagi
+  
+  // RAPID SCANNING: Delay dipercepat jadi 700ms (0.7 detik) untuk kode yang SAMA.
+  // Untuk kode BERBEDA, delay adalah 0ms.
+  const SCAN_DELAY = 700; 
 
   useEffect(() => {
     mountedRef.current = true;
@@ -39,6 +42,16 @@ export const Scanner: React.FC<ScannerProps> = ({
 
       const initScanner = async () => {
         try {
+          // Cleanup previous instance if any
+          if (scannerRef.current) {
+            try {
+               await scannerRef.current.stop();
+               scannerRef.current.clear();
+            } catch (e) {
+               console.warn("Cleanup warning:", e);
+            }
+          }
+
           const formatsToSupport = [
             Html5QrcodeSupportedFormats.QR_CODE,
             Html5QrcodeSupportedFormats.EAN_13,
@@ -49,47 +62,57 @@ export const Scanner: React.FC<ScannerProps> = ({
             Html5QrcodeSupportedFormats.UPC_E
           ];
 
-          // Cleanup previous instance if any (safe guard)
-          if (scannerRef.current) {
-            try {
-               await scannerRef.current.stop();
-               scannerRef.current.clear();
-            } catch (e) {
-               console.warn("Cleanup warning:", e);
+          const html5QrCode = new Html5Qrcode(scannerRegionId, { formatsToSupport, verbose: false });
+          scannerRef.current = html5QrCode;
+
+          // 1. Dapatkan List Kamera Fisik
+          const devices = await Html5Qrcode.getCameras();
+          let cameraConfig: any = { facingMode: { exact: "environment" } }; // Default strict fallback
+
+          if (devices && devices.length > 0) {
+            // Cari kamera belakang secara eksplisit berdasarkan label
+            const backCamera = devices.find(device => 
+              device.label.toLowerCase().includes('back') || 
+              device.label.toLowerCase().includes('belakang') || 
+              device.label.toLowerCase().includes('rear') ||
+              device.label.toLowerCase().includes('environment')
+            );
+
+            // Jika ada kamera belakang spesifik, pakai ID-nya (Paling Akurat)
+            if (backCamera) {
+               cameraConfig = { deviceId: { exact: backCamera.id } };
+            } else {
+               // Jika tidak ada label 'back', tapi ada lebih dari 1 kamera, biasanya kamera terakhir adalah belakang
+               if (devices.length > 1) {
+                  const lastCamera = devices[devices.length - 1];
+                  cameraConfig = { deviceId: { exact: lastCamera.id } };
+               }
             }
           }
 
-          // Gunakan ID dinamis
-          const html5QrCode = new Html5Qrcode(scannerRegionId);
-          scannerRef.current = html5QrCode;
-
           await html5QrCode.start(
-            { facingMode: "environment" },
+            cameraConfig, 
             {
-              fps: 10,
-              // Dynamic QR Box size based on viewfinder dimensions
-              // Widen the scan area to better support long barcodes
+              fps: 15, // Naikkan FPS agar scanning lebih cepat/responsif
               qrbox: (viewfinderWidth, viewfinderHeight) => {
-                // Use 85% of width for wide barcodes
                 const width = Math.floor(viewfinderWidth * 0.85);
-                // Use 60% of height (enough for 1D barcodes and QR codes)
                 const height = Math.floor(viewfinderHeight * 0.60);
                 return { width, height };
               },
-              // Removed fixed aspectRatio to allow camera to fill wide/short containers
-              formatsToSupport: formatsToSupport,
-              disableFlip: false
+              disableFlip: false,
+              aspectRatio: 1.0
             },
             (decodedText) => {
               if (!mountedRef.current) return;
 
               const now = Date.now();
-              // Cek apakah kode sama dengan sebelumnya dan masih dalam durasi delay
-              if (
-                decodedText === lastScannedCodeRef.current && 
-                now - lastScannedTimeRef.current < SCAN_DELAY
-              ) {
-                return; // Abaikan scan ini
+              const isSameCode = decodedText === lastScannedCodeRef.current;
+              
+              // RAPID SCAN LOGIC:
+              // Jika kode beda, scan LANGSUNG.
+              // Jika kode sama, tunggu SCAN_DELAY.
+              if (isSameCode && (now - lastScannedTimeRef.current < SCAN_DELAY)) {
+                return; 
               }
 
               // Update tracker
@@ -100,7 +123,7 @@ export const Scanner: React.FC<ScannerProps> = ({
               onScan(decodedText);
             },
             (errorMessage) => {
-              // Abaikan error saat scanning berlangsung
+              // Ignore scan errors
             }
           );
           
@@ -108,11 +131,25 @@ export const Scanner: React.FC<ScannerProps> = ({
 
         } catch (err) {
           console.error("Camera start error:", err);
-          if (mountedRef.current) setHasPermission(false);
+          // Fallback terakhir: Coba mode environment standard (loose) jika exact/deviceId gagal
+          try {
+             if (mountedRef.current && scannerRef.current) {
+                await scannerRef.current.start(
+                  { facingMode: "environment" },
+                  { fps: 10, qrbox: 250 },
+                  (text) => onScan(text),
+                  () => {}
+                );
+                setHasPermission(true);
+             }
+          } catch (retryErr) {
+             console.error("Retry failed:", retryErr);
+             if (mountedRef.current) setHasPermission(false);
+          }
         }
       };
 
-      // Beri sedikit delay agar DOM element dengan ID scannerRegionId sudah siap dirender
+      // Beri sedikit delay agar DOM element render
       const timer = setTimeout(initScanner, 300);
 
       return () => {
@@ -211,7 +248,6 @@ export const Scanner: React.FC<ScannerProps> = ({
             onChange={(e) => setManualCode(e.target.value)}
             placeholder="Ketik kode manual..." 
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm font-medium"
-            // REMOVED autoFocus HERE to prevent mobile keyboard popup
           />
           <button type="submit" className="bg-primary text-white px-4 rounded-lg font-bold text-sm">
             OK
@@ -224,7 +260,6 @@ export const Scanner: React.FC<ScannerProps> = ({
         )}
       </div>
       
-      {/* Dynamic Style for specific region ID */}
       <style>{`
         #${scannerRegionId} video {
           object-fit: cover;

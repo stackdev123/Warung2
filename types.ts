@@ -27,7 +27,9 @@ export interface Transaction {
   type: TransactionType;
   timestamp: number;
   items: CartItem[];
-  totalAmount: number;
+  totalAmount: number; // Ini adalah Total Akhir (setelah diskon)
+  subtotal?: number; // Total sebelum diskon (optional untuk backward compatibility)
+  discount?: number; // Nilai diskon dalam Rupiah
   note?: string;
   // Payment Details
   paymentMethod: 'CASH' | 'DEBT'; // QRIS Removed

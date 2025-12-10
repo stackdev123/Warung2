@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Package, ShoppingCart, DollarSign, Store, History, Loader2, Settings, X, Palette, Check } from 'lucide-react';
@@ -162,7 +161,7 @@ const Layout = ({ children }: { children?: React.ReactNode }) => {
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-gray-100">
+              <div className="pt-4 border-t border-gray-100 space-y-3">
                  <p className="text-center text-xs text-gray-400">WarungPintar App v2.1</p>
               </div>
             </div>

@@ -202,7 +202,21 @@ export const History: React.FC = () => {
               </div>
 
               <div className="border-t border-dashed border-gray-300 pt-2 space-y-1">
-                <div className="flex justify-between font-bold text-lg">
+                 {/* Subtotal if Discount Exists */}
+                 {(selectedTransaction.discount ?? 0) > 0 && (
+                   <div className="flex justify-between text-gray-500 text-xs">
+                      <span>Subtotal</span>
+                      <span>Rp {(selectedTransaction.subtotal || selectedTransaction.totalAmount + (selectedTransaction.discount || 0)).toLocaleString()}</span>
+                   </div>
+                 )}
+                 {(selectedTransaction.discount ?? 0) > 0 && (
+                   <div className="flex justify-between text-red-500 font-bold text-xs">
+                      <span>Diskon</span>
+                      <span>- Rp {(selectedTransaction.discount || 0).toLocaleString()}</span>
+                   </div>
+                 )}
+
+                <div className="flex justify-between font-bold text-lg border-t border-dashed border-gray-300 pt-1 mt-1">
                   <span>Total</span>
                   <span>Rp {selectedTransaction.totalAmount.toLocaleString()}</span>
                 </div>
