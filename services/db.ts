@@ -5,8 +5,8 @@ import { Product, Transaction, DebtRecord, TransactionType, DebtType, ShopStats,
 
 // KONFIGURASI SUPABASE
 // Menggunakan Key secara langsung sesuai permintaan untuk memastikan koneksi stabil
-const SUPABASE_URL = 'https://vqmfbnqjrdyijnpaywug.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_-MgxWwIiJHBhq1594eIdrw_NUSZKpQc';
+const SUPABASE_URL = 'https://bnvkyckfgavarzindfyq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_1ETmutk4sW63tAkdkMsUOQ_oatHt29j';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -374,7 +374,7 @@ export const db = {
     if (error || !items || !transactions) return [];
 
     // Filter items yang ID transaksinya ada di list transaksi KELUAR
-    const outTxIds = new Set(transactions.map(t => t.id));
+    const outTxIds = new Set(transactions.map((t: { id: any; }) => t.id));
     const soldItems = items.filter((i: any) => outTxIds.has(i.transaction_id));
 
     // Aggregate
