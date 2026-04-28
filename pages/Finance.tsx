@@ -310,23 +310,23 @@ export const Finance: React.FC = () => {
   const renderGroupedList = () => (
     <>
        {/* FILTER CONTROLS */}
-       <div className="flex justify-between items-center mb-4 overflow-x-auto">
-         <div className="flex bg-gray-100 p-1 rounded-lg">
+       <div className="flex justify-between items-center mb-4">
+         <div className="flex bg-gray-100 p-1 rounded-xl w-full">
             <button 
               onClick={() => setFilterStatus('UNPAID')}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${filterStatus === 'UNPAID' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterStatus === 'UNPAID' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Belum Lunas
             </button>
             <button 
               onClick={() => setFilterStatus('PAID')}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${filterStatus === 'PAID' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterStatus === 'PAID' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Lunas
             </button>
             <button 
               onClick={() => setFilterStatus('ALL')}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${filterStatus === 'ALL' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterStatus === 'ALL' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Semua
             </button>
@@ -337,15 +337,15 @@ export const Finance: React.FC = () => {
        {renderCharts()}
        
        {/* SUMMARY CARD */}
-       <div className={`p-6 rounded-2xl shadow-lg mb-6 text-white overflow-hidden relative ${tab === 'HUTANG' ? 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-200' : 'bg-gradient-to-br from-primary to-primary/80 shadow-primary/30'}`}>
+       <div className={`p-4 md:p-6 rounded-2xl shadow-lg mb-6 text-white overflow-hidden relative ${tab === 'HUTANG' ? 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-200' : 'bg-gradient-to-br from-primary to-primary/80 shadow-primary/30'}`}>
           <div className="absolute right-0 top-0 p-4 opacity-10">
-             {tab === 'HUTANG' ? <ArrowDownLeft size={120}/> : <ArrowUpRight size={120}/>}
+             {tab === 'HUTANG' ? <ArrowDownLeft size={100}/> : <ArrowUpRight size={100}/>}
           </div>
           <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2 opacity-90">
-              <p className="font-bold text-sm uppercase tracking-wide">Total {tab === 'HUTANG' ? 'Hutang Anda' : 'Piutang Pelanggan'} ({filterStatus === 'ALL' ? 'Semua' : filterStatus === 'UNPAID' ? 'Sisa' : 'Lunas'})</p>
+            <div className="flex items-center gap-2 mb-1 opacity-90">
+              <p className="font-bold text-[10px] md:text-sm uppercase tracking-wide">Total {tab === 'HUTANG' ? 'Hutang Anda' : 'Piutang Pelanggan'}</p>
             </div>
-            <p className="text-4xl font-bold">
+            <p className="text-2xl md:text-4xl font-bold">
               Rp {totalOutstanding.toLocaleString()}
             </p>
           </div>
@@ -412,7 +412,7 @@ export const Finance: React.FC = () => {
     return (
       <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
          {/* HEADER SUMMARY */}
-         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-3xl text-white shadow-xl shadow-blue-200 relative overflow-hidden">
+         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 md:p-8 rounded-3xl text-white shadow-xl shadow-blue-200 relative overflow-hidden">
             <div className="absolute -right-10 -top-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
             <p className="text-blue-100 text-xs mb-2 font-bold tracking-widest uppercase opacity-80">Keseimbangan Neraca</p>
             <div className="flex justify-between items-end">
@@ -526,20 +526,20 @@ export const Finance: React.FC = () => {
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {ledger.length > 0 && (
-              <div className="p-8 bg-gradient-to-r from-violet-600 to-indigo-600 text-white relative overflow-hidden">
+          <div className="bg-gradient-to-r from-violet-600 to-indigo-600 p-6 md:p-8 text-white relative overflow-hidden">
                  <div className="absolute right-0 top-0 p-4 opacity-10">
-                   <Book size={100}/>
+                   <Book size={80}/>
                  </div>
-                 <div className="relative z-10 flex justify-between items-center">
+                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                      <p className="text-violet-100 text-xs font-bold uppercase tracking-widest mb-2">Saldo Kas Fisik Saat Ini</p>
-                      <p className="text-5xl font-bold">Rp {ledger[0].balance.toLocaleString()}</p>
+                      <p className="text-violet-100 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1 md:mb-2">Saldo Kas Fisik</p>
+                      <p className="text-3xl md:text-5xl font-bold">Rp {ledger[0].balance.toLocaleString()}</p>
                     </div>
                     <button 
                       onClick={() => { setActualCash(''); setIsRevisionModalOpen(true); }}
-                      className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 backdrop-blur-sm transition-colors border border-white/20"
+                      className="bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-xl text-[10px] md:text-xs font-bold flex items-center gap-2 backdrop-blur-sm transition-colors border border-white/20"
                     >
-                      <RefreshCw size={16} /> Revisi Saldo
+                      <RefreshCw size={14} /> Revisi Saldo
                     </button>
                  </div>
               </div>
@@ -561,36 +561,36 @@ export const Finance: React.FC = () => {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-500 font-bold border-b border-gray-100 sticky top-[60px] md:top-0 z-10 shadow-sm">
+              <table className="w-full text-sm text-left table-fixed md:table-auto">
+                <thead className="bg-gray-50 text-gray-500 font-bold border-b border-gray-100 sticky top-[60px] md:top-0 z-10 shadow-sm transition-all text-[9px] md:text-sm uppercase tracking-tight">
                   <tr>
-                    <th className="px-6 py-4 whitespace-nowrap bg-gray-50">Tanggal</th>
-                    <th className="px-6 py-4 bg-gray-50">Keterangan</th>
-                    <th className="px-6 py-4 text-right text-green-600 bg-gray-50">Masuk</th>
-                    <th className="px-6 py-4 text-right text-red-600 bg-gray-50">Keluar</th>
-                    <th className="px-6 py-4 text-right bg-gray-50">Saldo</th>
+                    <th className="w-[85px] md:w-auto px-2 md:px-6 py-4 whitespace-nowrap bg-gray-50">Tanggal</th>
+                    <th className="px-2 md:px-6 py-4 bg-gray-50">Keterangan</th>
+                    <th className="w-[70px] md:w-auto px-2 md:px-6 py-4 text-right text-green-600 bg-gray-50">Masuk</th>
+                    <th className="w-[70px] md:w-auto px-2 md:px-6 py-4 text-right text-red-600 bg-gray-50">Keluar</th>
+                    <th className="w-[85px] md:w-auto px-2 md:px-6 py-4 text-right bg-gray-50">Saldo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {ledger.map((entry, index) => (
                     <tr key={entry.id} className="hover:bg-gray-50 transition-colors even:bg-gray-50/50">
-                      <td className="px-6 py-4 text-gray-500 whitespace-nowrap font-medium">
+                      <td className="px-2 md:px-6 py-3 text-gray-500 whitespace-nowrap font-medium text-[10px] md:text-sm">
                         {new Date(entry.date).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'})}
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide mb-1 ${
+                      <td className="px-2 md:px-6 py-3">
+                        <span className={`inline-block px-1.5 md:px-2 py-0.5 rounded text-[7px] md:text-[10px] font-bold uppercase tracking-wide mb-0.5 md:mb-1 ${
                           entry.category === 'KOREKSI' ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-500'
                         }`}>{entry.category}</span>
-                        <p className="text-sm text-gray-700 font-medium">{entry.description}</p>
+                        <p className="text-[10px] md:text-sm text-gray-700 font-medium line-clamp-1 md:line-clamp-none leading-tight">{entry.description}</p>
                       </td>
-                      <td className="px-6 py-4 text-right font-bold text-emerald-600">
-                        {entry.type === 'DEBIT' ? `+ ${entry.amount.toLocaleString()}` : '-'}
+                      <td className="px-2 md:px-6 py-3 text-right font-bold text-emerald-600 text-[10px] md:text-sm">
+                        {entry.type === 'DEBIT' ? entry.amount.toLocaleString() : '-'}
                       </td>
-                      <td className="px-6 py-4 text-right font-bold text-red-500">
-                        {entry.type === 'CREDIT' ? `- ${entry.amount.toLocaleString()}` : '-'}
+                      <td className="px-2 md:px-6 py-3 text-right font-bold text-red-500 text-[10px] md:text-sm">
+                        {entry.type === 'CREDIT' ? entry.amount.toLocaleString() : '-'}
                       </td>
-                      <td className="px-6 py-4 text-right font-bold text-gray-800 bg-gray-50/30">
-                        Rp {entry.balance.toLocaleString()}
+                      <td className="px-2 md:px-6 py-3 text-right font-bold text-gray-800 bg-gray-50/30 text-[10px] md:text-sm">
+                        {entry.balance.toLocaleString()}
                       </td>
                     </tr>
                   ))}
@@ -608,48 +608,50 @@ export const Finance: React.FC = () => {
   );
 
   return (
-    <div className="max-w-5xl mx-auto min-h-screen">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6 tracking-tight">Pusat Keuangan</h1>
+    <div className="max-w-5xl mx-auto min-h-screen px-4 md:px-0">
+      <div className="w-[300px] md:w-full mx-auto">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 tracking-tight">Pusat Keuangan</h1>
+      </div>
       
       {/* TABS Navigation - Segmented Control Style */}
-      <div className="sticky top-0 z-20 bg-gray-50 pb-4">
-        <div className="flex p-1.5 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-x-auto no-scrollbar">
+      <div className="sticky top-0 z-20 bg-gray-50 pb-4 w-[300px] md:w-full mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 p-1.5 bg-white rounded-2xl shadow-sm border border-gray-200 gap-1.5">
           <button 
             onClick={() => setTab('PIUTANG')} 
-            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 whitespace-nowrap flex-shrink-0 transition-all duration-200 ${tab === 'PIUTANG' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+            className={`py-3 px-2 rounded-xl text-[10px] md:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${tab === 'PIUTANG' ? 'bg-primary text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
           >
-            <ArrowUpRight size={18} /> Piutang
+            <ArrowUpRight size={14} /> Piutang
           </button>
           <button 
             onClick={() => setTab('HUTANG')} 
-            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 whitespace-nowrap flex-shrink-0 transition-all duration-200 ${tab === 'HUTANG' ? 'bg-red-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+            className={`py-3 px-2 rounded-xl text-[10px] md:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${tab === 'HUTANG' ? 'bg-red-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
           >
-            <ArrowDownLeft size={18} /> Hutang
+            <ArrowDownLeft size={14} /> Hutang
           </button>
           <button 
             onClick={() => setTab('NERACA')} 
-            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 whitespace-nowrap flex-shrink-0 transition-all duration-200 ${tab === 'NERACA' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+            className={`py-3 px-2 rounded-xl text-[10px] md:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${tab === 'NERACA' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
           >
-            <Scale size={18} /> Neraca
+            <Scale size={14} /> Neraca
           </button>
            <button 
             onClick={() => setTab('LEDGER')} 
-            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 whitespace-nowrap flex-shrink-0 transition-all duration-200 ${tab === 'LEDGER' ? 'bg-violet-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
+            className={`py-3 px-2 rounded-xl text-[10px] md:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-200 ${tab === 'LEDGER' ? 'bg-violet-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`}
           >
-            <Book size={18} /> Buku Kas
+            <Book size={14} /> Buku Kas
           </button>
         </div>
       </div>
 
       {/* CONTENT AREA */}
-      <div className="mt-2">
+      <div className="mt-2 w-[300px] md:w-full mx-auto">
         {tab === 'HUTANG' || tab === 'PIUTANG' ? (
           <>
             {renderGroupedList()}
             {/* Floating Action Button */}
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="fixed bottom-24 right-6 bg-gray-900 text-white p-4 rounded-2xl shadow-2xl shadow-gray-500/50 hover:scale-105 transition-transform z-30 flex items-center justify-center"
+              className="fixed bottom-[calc(7rem+env(safe-area-inset-bottom))] right-6 bg-gray-900 text-white p-4 rounded-2xl shadow-2xl shadow-gray-500/50 hover:scale-105 transition-transform z-30 flex items-center justify-center"
             >
               <Plus size={28} />
             </button>

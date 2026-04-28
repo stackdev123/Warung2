@@ -42,6 +42,15 @@ export const Scanner: React.FC<ScannerProps> = ({
 
       const initScanner = async () => {
         try {
+          // Explicitly request camera permission first to trigger the browser prompt
+          try {
+             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+             stream.getTracks().forEach(track => track.stop()); // Stop immediately, just needed it for permissions
+          } catch (permErr) {
+             console.warn("Permission explicitly denied or failed:", permErr);
+             // We can still try html5qrcode, it might handle it or fail
+          }
+
           // Cleanup previous instance if any
           if (scannerRef.current) {
             try {
@@ -196,10 +205,13 @@ export const Scanner: React.FC<ScannerProps> = ({
       
       <div className="flex-1 relative flex items-center justify-center bg-black overflow-hidden">
         {hasPermission === false ? (
-          <div className="text-white text-center p-4 z-10">
+          <div className="text-white text-center p-4 z-10 flex flex-col items-center">
             <AlertCircle size={48} className="mx-auto mb-2 text-red-500" />
             <p className="font-bold">Akses kamera gagal.</p>
-            <p className="text-sm text-gray-400 mt-2">Pastikan izin kamera aktif atau gunakan input manual.</p>
+            <p className="text-sm text-gray-400 mt-2">Pastikan izin kamera aktif pada browser Anda.</p>
+            <p className="text-xs text-yellow-400 mt-4 bg-yellow-400/10 p-3 rounded-lg border border-yellow-400/20 max-w-sm">
+              💡 Jika Anda melihat ini di dalam preview, <strong>coba buka aplikasi di Tab Baru</strong> karena beberapa browser memblokir izin kamera di dalam layar preview (iframe).
+            </p>
           </div>
         ) : (
           <>

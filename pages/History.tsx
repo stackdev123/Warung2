@@ -168,7 +168,7 @@ export const History: React.FC = () => {
             {/* Printable Area */}
             <div id="receipt-area" className="font-mono text-sm">
               <div className="text-center mb-4 pb-4 border-b border-dashed border-gray-300">
-                <h2 className="font-bold text-xl uppercase tracking-wider mb-1">WarungPintar</h2>
+                <h2 className="font-bold text-xl uppercase tracking-wider mb-1">Tokoo</h2>
                 <p className="text-xs text-gray-500">Jl. Raya Warung No. 1</p>
                 <p className="text-xs text-gray-500">Telp: 0812-3456-7890</p>
               </div>

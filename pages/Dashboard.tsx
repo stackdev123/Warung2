@@ -58,44 +58,46 @@ export const Dashboard: React.FC = () => {
   const hasFinanceData = financeData.length > 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-           <div className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-1">
-              <Calendar size={16} />
-              <span>{currentDate}</span>
-           </div>
-           <h1 className="text-3xl font-bold text-gray-800 tracking-tight">Dashboard Overview</h1>
+    <div className="max-w-7xl mx-auto space-y-8 pb-10 px-4 md:px-0">
+      <div className="w-[300px] md:w-full mx-auto space-y-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+             <div className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-1">
+                <Calendar size={16} />
+                <span>{currentDate}</span>
+             </div>
+             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Dashboard Overview</h1>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={fetchStats} className="flex-1 md:flex-none p-3 md:p-2 bg-white border border-gray-200 shadow-sm rounded-xl text-gray-500 hover:text-primary hover:bg-gray-50 transition-all flex items-center justify-center gap-2">
+              <RefreshCcw size={20} />
+              <span className="md:hidden font-bold text-xs text-gray-600">Segarkan</span>
+            </button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={fetchStats} className="p-2 bg-white border border-gray-200 shadow-sm rounded-xl text-gray-500 hover:text-primary hover:bg-gray-50 transition-all">
-            <RefreshCcw size={20} />
-          </button>
-        </div>
-      </div>
 
-      {/* Main Stats Grid with Gradients & Animations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Main Stats Grid with Gradients & Animations */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         
         {/* Card 1: Omzet */}
-        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-lg shadow-emerald-200 text-white relative overflow-hidden group hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 cursor-default">
+        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-lg shadow-emerald-200 text-white relative overflow-hidden group hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 cursor-default min-h-[120px]">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
             <TrendingUp size={100} />
           </div>
           <div className="relative z-10">
-            <p className="text-emerald-100 text-sm font-bold uppercase tracking-wider mb-2">Omzet Hari Ini</p>
-            <p className="text-3xl font-bold">Rp {stats.totalSalesToday.toLocaleString()}</p>
+            <p className="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-1">Omzet Hari Ini</p>
+            <p className="text-2xl md:text-3xl font-bold">Rp {stats.totalSalesToday.toLocaleString()}</p>
           </div>
         </div>
 
         {/* Card 2: Profit */}
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-6 rounded-2xl shadow-lg shadow-blue-200 text-white relative overflow-hidden group hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 cursor-default">
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-6 rounded-2xl shadow-lg shadow-blue-200 text-white relative overflow-hidden group hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 cursor-default min-h-[120px]">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
             <Wallet size={100} />
           </div>
           <div className="relative z-10">
-            <p className="text-blue-100 text-sm font-bold uppercase tracking-wider mb-2">Profit Hari Ini</p>
-            <p className="text-3xl font-bold">Rp {stats.totalProfitToday.toLocaleString()}</p>
+            <p className="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Profit Hari Ini</p>
+            <p className="text-2xl md:text-3xl font-bold">Rp {stats.totalProfitToday.toLocaleString()}</p>
           </div>
         </div>
 
@@ -208,7 +210,7 @@ export const Dashboard: React.FC = () => {
                       ))}
                     </Pie>
                     <Tooltip 
-                       formatter={(value: number) => `Rp ${value.toLocaleString()}`}
+                       formatter={(value) => `Rp ${Number(value || 0).toLocaleString()}`}
                        contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
                     />
                     <Legend 
@@ -252,5 +254,6 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };

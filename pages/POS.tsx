@@ -394,8 +394,7 @@ export const POS: React.FC = () => {
   );
 
   return (
-    // Use 100dvh for mobile to respect browser address bars
-    <div className="flex flex-col md:flex-row h-[100dvh] overflow-hidden bg-gray-50 md:-m-8">
+    <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-gray-50">
       
       {/* LEFT COLUMN: PRODUCT LIST (DESKTOP) OR SCANNER AREA */}
       <div className="flex-1 hidden md:flex flex-col border-r border-gray-200 h-full">
@@ -617,7 +616,7 @@ export const POS: React.FC = () => {
         </div>
 
         {/* Cart Footer - Shrink 0 to never collapse */}
-        <div className="p-4 md:p-5 bg-white border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-20 shrink-0 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+        <div className="p-4 md:p-5 bg-white border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-20 shrink-0">
           <div className="flex justify-between items-end mb-4">
             <span className="text-gray-500 font-medium">{mode === TransactionType.IN ? 'Total Belanja' : 'Total Tagihan'}</span>
             <span className="text-3xl font-bold text-gray-800">Rp {subtotal.toLocaleString()}</span>
@@ -899,7 +898,7 @@ export const POS: React.FC = () => {
             {/* Printable Area */}
             <div id="receipt-area" className="font-mono text-sm">
               <div className="text-center mb-4 pb-4 border-b border-dashed border-gray-300">
-                <h2 className="font-bold text-xl uppercase tracking-wider mb-1">WarungPintar</h2>
+                <h2 className="font-bold text-xl uppercase tracking-wider mb-1">Tokoo</h2>
                 {lastTransaction.id === 'DRAFT' && (
                   <div className="border border-dashed border-gray-400 px-2 py-1 inline-block text-xs font-bold my-1">
                     ESTIMASI / BILL

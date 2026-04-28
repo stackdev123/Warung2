@@ -73,11 +73,11 @@ const Layout = ({ children }: { children?: React.ReactNode }) => {
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 fixed h-full z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
         <div className="p-6 pb-8">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-primary to-primary/80 p-2.5 rounded-xl text-white shadow-lg shadow-primary/30">
-              <Store size={24} />
+            <div className="w-20 h-20 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden border border-gray-100">
+              <img src="/logo.png" alt="Tokoo Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="font-bold text-lg text-gray-800 tracking-tight leading-none">WarungPintar</h1>
+              <h1 className="font-bold text-lg text-gray-800 tracking-tight leading-none">Tokoo</h1>
               <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1 uppercase">v2.0 Pro</p>
             </div>
           </div>
@@ -103,14 +103,14 @@ const Layout = ({ children }: { children?: React.ReactNode }) => {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className={`flex-1 md:ml-64 transition-all duration-300 ${isPos ? 'p-0' : 'p-4 md:p-8'} mb-20 md:mb-0 h-screen overflow-y-auto scroll-smooth`}>
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <main className="flex flex-col flex-1 md:ml-64 transition-all duration-300 h-[100dvh] overflow-y-auto scroll-smooth bg-gray-50">
+        <div className={`flex flex-col flex-1 h-full animate-in fade-in slide-in-from-bottom-2 duration-300 ${isPos ? 'pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0' : 'p-4 md:p-8 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8'}`}>
           {children}
         </div>
       </main>
 
       {/* BOTTOM NAV (MOBILE) */}
-      <nav className="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-around py-3 pb-safe z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 w-full bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-around pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <MobileNavItem to="/" icon={LayoutDashboard} label="Beranda" />
         <MobileNavItem to="/stok" icon={Package} label="Stok" />
         <div className="relative -top-8">

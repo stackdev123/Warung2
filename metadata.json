@@ -1,5 +1,5 @@
 {
-  "name": "WarungPintar AI",
+  "name": "Tokoo",
   "description": "Aplikasi manajemen warung cerdas dengan fitur kasir, stok, keuangan, dan asisten AI.",
   "requestFramePermissions": [
     "camera"
