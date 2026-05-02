@@ -26,6 +26,7 @@ export const POS: React.FC = () => {
   // Payment State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'DEBT'>('CASH');
+  const [paymentBank, setPaymentBank] = useState<string>(''); // Bank/Merchant
   const [amountPaid, setAmountPaid] = useState<string>(''); 
   const [partyName, setPartyName] = useState(''); 
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -180,6 +181,7 @@ export const POS: React.FC = () => {
   const openCheckout = () => {
     if (cart.length === 0) return;
     setPaymentMethod('CASH');
+    setPaymentBank('');
     setAmountPaid('');
     setPartyName('');
     setDiscountValue('');
@@ -248,7 +250,8 @@ export const POS: React.FC = () => {
       paymentMethod: isDebtInvolved ? 'DEBT' : paymentMethod, 
       amountPaid: paid,
       change,
-      partyName: isDebtInvolved ? partyName : undefined
+      note: paymentBank || undefined,
+      partyName: partyName.trim() ? partyName : undefined
     };
 
     try {
@@ -754,6 +757,32 @@ export const POS: React.FC = () => {
                     {paymentMethod === 'CASH' && (
                       <>
                         <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                          <label className="text-xs font-bold text-gray-500 mb-2 block uppercase">Bank / Merchant (Opsional)</label>
+                          <select
+                            value={paymentBank}
+                            onChange={(e) => setPaymentBank(e.target.value)}
+                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary shadow-sm mb-4"
+                          >
+                            <option value="">-- Tunai / Cash --</option>
+                            <option value="BCA">BCA</option>
+                            <option value="Mandiri">Mandiri</option>
+                            <option value="BNI">BNI</option>
+                            <option value="BRI">BRI</option>
+                            <option value="BSI">BSI</option>
+                            <option value="Gopay">GoPay</option>
+                            <option value="OVO">OVO</option>
+                            <option value="Dana">DANA</option>
+                            <option value="ShopeePay">ShopeePay</option>
+                            <option value="LinkAja">LinkAja</option>
+                            <option value="Lainnya">Lainnya...</option>
+                          </select>
+
+                          {calcState.status !== 'DEBT' && (
+                             <div className="mb-4">
+                                {renderPartyInput('Nama Pelanggan (Opsional)', false)}
+                             </div>
+                          )}
+
                           <label className="text-xs font-bold text-gray-500 mb-2 block uppercase">Uang Diterima</label>
                           <div className="relative">
                             <span className="absolute left-4 top-4 text-gray-400 font-bold text-lg">Rp</span>
@@ -898,14 +927,14 @@ export const POS: React.FC = () => {
             {/* Printable Area */}
             <div id="receipt-area" className="font-mono text-sm">
               <div className="text-center mb-4 pb-4 border-b border-dashed border-gray-300">
-                <h2 className="font-bold text-xl uppercase tracking-wider mb-1">Tokoo</h2>
+                <h2 className="font-bold text-xl uppercase tracking-wider mb-1">{db.getStoreProfile().name}</h2>
                 {lastTransaction.id === 'DRAFT' && (
                   <div className="border border-dashed border-gray-400 px-2 py-1 inline-block text-xs font-bold my-1">
                     ESTIMASI / BILL
                   </div>
                 )}
-                <p className="text-xs text-gray-500">Jl. Raya Warung No. 1</p>
-                <p className="text-xs text-gray-500">Telp: 0812-3456-7890</p>
+                <p className="text-xs text-gray-500 whitespace-pre-wrap">{db.getStoreProfile().address}</p>
+                {db.getStoreProfile().phone && <p className="text-xs text-gray-500">Telp: {db.getStoreProfile().phone}</p>}
               </div>
               
               <div className="flex justify-between text-xs text-gray-500 mb-2">

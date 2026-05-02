@@ -5,7 +5,9 @@ export enum TransactionType {
   OUT = 'KELUAR', // Sale
   EXPENSE = 'PENGELUARAN', // Operasional Keluar
   INCOME = 'PEMASUKAN', // Operasional Masuk
-  ADJUSTMENT = 'PENYESUAIAN' // Revisi/Koreksi Saldo
+  ADJUSTMENT = 'PENYESUAIAN', // Revisi/Koreksi Saldo
+  TARIK_TUNAI = 'TARIK_TUNAI', // Kasih uang ke pelanggan
+  SETOR_TUNAI = 'SETOR_TUNAI' // Terima uang dari pelanggan
 }
 
 export interface Product {

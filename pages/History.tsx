@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
 import { Transaction, TransactionType } from '../types';
-import { Search, Printer, ArrowDown, Loader2, X, Clock, FileText, Calendar } from 'lucide-react';
+import { Search, Printer, ArrowDown, Loader2, X, Clock, FileText, Calendar, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
 export const History: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -51,7 +51,7 @@ export const History: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto min-h-screen">
+    <div className="w-full max-w-[1400px] mx-auto min-h-screen px-4 md:px-8 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
            <h1 className="text-2xl font-bold text-gray-800">Riwayat Transaksi</h1>
@@ -84,9 +84,9 @@ export const History: React.FC = () => {
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {transactions.length === 0 && !loading && (
-           <div className="text-center py-20 text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
+           <div className="col-span-1 md:col-span-2 xl:col-span-3 text-center py-20 text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
              <FileText size={48} className="mx-auto mb-2 opacity-30" />
              <p className="font-bold">Tidak ada transaksi ditemukan</p>
              <p className="text-sm">untuk tanggal {selectedDate ? new Date(selectedDate).toLocaleDateString('id-ID') : 'ini'}.</p>
@@ -97,12 +97,12 @@ export const History: React.FC = () => {
           <div key={t.id} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
             <div className="flex justify-between items-start mb-3">
               <div className="flex gap-3 items-center">
-                 <div className={`p-2 rounded-lg ${t.type === TransactionType.OUT ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                   {t.type === TransactionType.OUT ? <ArrowDown className="rotate-45" size={20} /> : <ArrowDown className="-rotate-135" size={20} />}
+                 <div className={`p-2 rounded-lg ${t.type === TransactionType.OUT ? 'bg-green-100 text-green-700' : t.type === TransactionType.IN ? 'bg-blue-100 text-blue-700' : t.type === TransactionType.TARIK_TUNAI ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                   {t.type === TransactionType.OUT ? <ArrowDown className="rotate-45" size={20} /> : t.type === TransactionType.IN ? <ArrowDown className="-rotate-135" size={20} /> : t.type === TransactionType.TARIK_TUNAI ? <ArrowUpRight className="" size={20} /> : <ArrowDownLeft className="" size={20} />}
                  </div>
                  <div>
                    <h3 className="font-bold text-gray-800">
-                     {t.type === TransactionType.OUT ? 'Penjualan' : 'Restock Barang'}
+                     {t.type === TransactionType.OUT ? 'Penjualan' : t.type === TransactionType.IN ? 'Restock Barang' : t.type === TransactionType.TARIK_TUNAI ? 'Tarik Tunai' : 'Setor Tunai'}
                    </h3>
                    <p className="text-xs text-gray-400 flex items-center gap-1">
                      <Clock size={12} /> {new Date(t.timestamp).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })}
@@ -110,7 +110,7 @@ export const History: React.FC = () => {
                  </div>
               </div>
               <div className="text-right">
-                <p className={`font-bold text-lg ${t.type === TransactionType.OUT ? 'text-green-600' : 'text-blue-600'}`}>
+                <p className={`font-bold text-lg ${t.type === TransactionType.OUT || t.type === TransactionType.SETOR_TUNAI ? 'text-green-600' : 'text-blue-600'}`}>
                   Rp {t.totalAmount.toLocaleString()}
                 </p>
                 <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
@@ -123,6 +123,13 @@ export const History: React.FC = () => {
               <div className="mb-3 text-sm bg-gray-50 p-2 rounded border border-gray-100 flex gap-2">
                  <span className="text-gray-500">{t.type === TransactionType.OUT ? 'Pelanggan:' : 'Supplier:'}</span>
                  <span className="font-bold text-gray-700">{t.partyName}</span>
+              </div>
+            )}
+
+            {t.note && t.type !== TransactionType.ADJUSTMENT && t.type !== TransactionType.INCOME && t.type !== TransactionType.EXPENSE && (
+              <div className="mb-3 text-sm bg-gray-50 p-2 rounded border border-gray-100 flex gap-2">
+                 <span className="text-gray-500">Bank / Catatan:</span>
+                 <span className="font-bold text-gray-700">{t.note}</span>
               </div>
             )}
 
@@ -139,18 +146,20 @@ export const History: React.FC = () => {
         ))}
 
         {loading && (
-          <div className="text-center py-4">
+          <div className="col-span-1 md:col-span-2 xl:col-span-3 text-center py-4">
             <Loader2 className="animate-spin mx-auto text-primary" />
           </div>
         )}
 
         {!loading && hasMore && transactions.length > 0 && (
-          <button 
-            onClick={handleLoadMore}
-            className="w-full py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition-all"
-          >
-            Muat Lebih Banyak
-          </button>
+          <div className="col-span-1 md:col-span-2 xl:col-span-3 pb-4">
+            <button 
+              onClick={handleLoadMore}
+              className="w-full py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition-all"
+            >
+              Muat Lebih Banyak
+            </button>
+          </div>
         )}
       </div>
 
@@ -168,9 +177,9 @@ export const History: React.FC = () => {
             {/* Printable Area */}
             <div id="receipt-area" className="font-mono text-sm">
               <div className="text-center mb-4 pb-4 border-b border-dashed border-gray-300">
-                <h2 className="font-bold text-xl uppercase tracking-wider mb-1">Tokoo</h2>
-                <p className="text-xs text-gray-500">Jl. Raya Warung No. 1</p>
-                <p className="text-xs text-gray-500">Telp: 0812-3456-7890</p>
+                <h2 className="font-bold text-xl uppercase tracking-wider mb-1">{db.getStoreProfile().name}</h2>
+                <p className="text-xs text-gray-500 whitespace-pre-wrap">{db.getStoreProfile().address}</p>
+                {db.getStoreProfile().phone && <p className="text-xs text-gray-500">Telp: {db.getStoreProfile().phone}</p>}
               </div>
               
               <div className="flex justify-between text-xs text-gray-500 mb-2">
@@ -186,19 +195,37 @@ export const History: React.FC = () => {
 
               {/* ITEM LIST */}
               <div className="border-t border-dashed border-gray-300 py-2 mb-2">
-                {selectedTransaction.items.map((item, index) => (
-                   <div key={index} className="flex flex-col mb-2 border-b border-dashed border-gray-100 pb-2 last:border-0 last:pb-0 last:mb-0">
-                     <span className="font-bold text-gray-800">{item.name}</span>
-                     <div className="flex justify-between items-center text-xs mt-0.5">
-                        <span className="text-gray-500">
-                          {item.quantity} x {(selectedTransaction.type === TransactionType.OUT ? item.sellPrice : item.buyPrice).toLocaleString()}
-                        </span>
+                {selectedTransaction.type === TransactionType.TARIK_TUNAI || selectedTransaction.type === TransactionType.SETOR_TUNAI ? (
+                   <div className="flex flex-col mb-2 border-b border-dashed border-gray-100 pb-2 last:border-0 last:pb-0 last:mb-0">
+                     <span className="font-bold text-gray-800">{selectedTransaction.items[0]?.name || (selectedTransaction.type === TransactionType.TARIK_TUNAI ? 'Tarik Tunai' : 'Setor Tunai')}</span>
+                     <div className="flex justify-between items-center text-xs mt-1">
+                        <span className="text-gray-500">Jumlah (Pokok)</span>
                         <span className="font-bold text-gray-800">
-                           {(item.quantity * (selectedTransaction.type === TransactionType.OUT ? item.sellPrice : item.buyPrice)).toLocaleString()}
+                           Rp {selectedTransaction.totalAmount.toLocaleString()}
+                        </span>
+                     </div>
+                     <div className="flex justify-between items-center text-xs mt-0.5">
+                        <span className="text-gray-500">Biaya Admin</span>
+                        <span className="font-bold text-gray-800">
+                           Rp {(selectedTransaction.subtotal || 0).toLocaleString()}
                         </span>
                      </div>
                    </div>
-                ))}
+                ) : (
+                  selectedTransaction.items.map((item, index) => (
+                     <div key={index} className="flex flex-col mb-2 border-b border-dashed border-gray-100 pb-2 last:border-0 last:pb-0 last:mb-0">
+                       <span className="font-bold text-gray-800">{item.name}</span>
+                       <div className="flex justify-between items-center text-xs mt-0.5">
+                          <span className="text-gray-500">
+                            {item.quantity} x {(selectedTransaction.type === TransactionType.OUT ? item.sellPrice : item.buyPrice).toLocaleString()}
+                          </span>
+                          <span className="font-bold text-gray-800">
+                             {(item.quantity * (selectedTransaction.type === TransactionType.OUT ? item.sellPrice : item.buyPrice)).toLocaleString()}
+                          </span>
+                       </div>
+                     </div>
+                  ))
+                )}
               </div>
 
               <div className="border-t border-dashed border-gray-300 pt-2 space-y-1">
@@ -218,9 +245,9 @@ export const History: React.FC = () => {
 
                 <div className="flex justify-between font-bold text-lg border-t border-dashed border-gray-300 pt-1 mt-1">
                   <span>Total</span>
-                  <span>Rp {selectedTransaction.totalAmount.toLocaleString()}</span>
+                  <span>Rp {(selectedTransaction.type === TransactionType.TARIK_TUNAI || selectedTransaction.type === TransactionType.SETOR_TUNAI ? (selectedTransaction.totalAmount + (selectedTransaction.subtotal || 0)) : selectedTransaction.totalAmount).toLocaleString()}</span>
                 </div>
-                {selectedTransaction.paymentMethod === 'CASH' && (
+                {selectedTransaction.paymentMethod === 'CASH' && selectedTransaction.type !== TransactionType.TARIK_TUNAI && selectedTransaction.type !== TransactionType.SETOR_TUNAI && (
                   <>
                      <div className="flex justify-between text-xs text-gray-500">
                        <span>Tunai</span>

@@ -357,9 +357,9 @@ export const Finance: React.FC = () => {
            <p>Memuat data...</p>
          </div>
        ) : (
-         <div className="space-y-3 pb-24">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-24">
            {groupedDebts.length === 0 && (
-             <div className="text-center py-12 text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
+             <div className="col-span-1 md:col-span-2 lg:col-span-3 text-center py-12 text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
                <Users className="mx-auto mb-2 opacity-30" size={48}/>
                <p>Data tidak ditemukan untuk filter ini.</p>
              </div>
@@ -608,13 +608,13 @@ export const Finance: React.FC = () => {
   );
 
   return (
-    <div className="max-w-5xl mx-auto min-h-screen px-4 md:px-0">
-      <div className="w-[300px] md:w-full mx-auto">
+    <div className="w-full max-w-[1400px] mx-auto min-h-screen px-4 md:px-8 pb-20">
+      <div className="w-full mx-auto">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 tracking-tight">Pusat Keuangan</h1>
       </div>
       
       {/* TABS Navigation - Segmented Control Style */}
-      <div className="sticky top-0 z-20 bg-gray-50 pb-4 w-[300px] md:w-full mx-auto">
+      <div className="sticky top-0 z-20 bg-gray-50 pb-4 w-full mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 p-1.5 bg-white rounded-2xl shadow-sm border border-gray-200 gap-1.5">
           <button 
             onClick={() => setTab('PIUTANG')} 
@@ -644,7 +644,7 @@ export const Finance: React.FC = () => {
       </div>
 
       {/* CONTENT AREA */}
-      <div className="mt-2 w-[300px] md:w-full mx-auto">
+      <div className="mt-2 w-full mx-auto">
         {tab === 'HUTANG' || tab === 'PIUTANG' ? (
           <>
             {renderGroupedList()}

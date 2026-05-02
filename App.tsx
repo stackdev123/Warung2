@@ -51,12 +51,27 @@ const Layout = ({ children }: { children?: React.ReactNode }) => {
   const isPos = location.pathname === '/pos';
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState('emerald');
+  const [storeName, setStoreName] = useState('Tokoo');
+  const [storeAddress, setStoreAddress] = useState('');
+  const [storePhone, setStorePhone] = useState('');
 
   useEffect(() => {
     // Load saved theme
     const savedTheme = db.getTheme();
     applyTheme(savedTheme);
+    
+    // Load store profile
+    const profile = db.getStoreProfile();
+    setStoreName(profile.name);
+    setStoreAddress(profile.address);
+    setStorePhone(profile.phone);
   }, []);
+
+  const handleSaveProfile = () => {
+    db.saveStoreProfile({ name: storeName, address: storeAddress, phone: storePhone });
+    setIsSettingsOpen(false);
+    window.location.reload(); // Quick way to propagate profile change
+  };
 
   const applyTheme = (themeId: string) => {
     setCurrentTheme(themeId);
@@ -77,8 +92,8 @@ const Layout = ({ children }: { children?: React.ReactNode }) => {
               <img src="/logo.png" alt="Tokoo Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="font-bold text-lg text-gray-800 tracking-tight leading-none">Tokoo</h1>
-              <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1 uppercase">v2.0 Pro</p>
+              <h1 className="font-bold text-lg text-gray-800 tracking-tight leading-none">{storeName}</h1>
+              <p className="text-[10px] text-gray-400 font-medium tracking-wide mt-1 uppercase">v2.1 Pro</p>
             </div>
           </div>
         </div>
@@ -103,7 +118,14 @@ const Layout = ({ children }: { children?: React.ReactNode }) => {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex flex-col flex-1 md:ml-64 transition-all duration-300 h-[100dvh] overflow-y-auto scroll-smooth bg-gray-50">
+      <main className="flex flex-col flex-1 md:ml-64 transition-all duration-300 h-[100dvh] overflow-y-auto scroll-smooth bg-gray-50 relative">
+        <button 
+          onClick={() => setIsSettingsOpen(true)}
+          className="md:hidden absolute top-4 right-4 z-40 p-2 bg-white/80 backdrop-blur border border-gray-200 text-gray-500 rounded-full shadow-sm hover:text-gray-900"
+        >
+          <Settings size={20} />
+        </button>  
+
         <div className={`flex flex-col flex-1 h-full animate-in fade-in slide-in-from-bottom-2 duration-300 ${isPos ? 'pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0' : 'p-4 md:p-8 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8'}`}>
           {children}
         </div>
@@ -119,19 +141,13 @@ const Layout = ({ children }: { children?: React.ReactNode }) => {
           </NavLink>
         </div>
         <MobileNavItem to="/keuangan" icon={DollarSign} label="Keuangan" />
-        <button 
-          onClick={() => setIsSettingsOpen(true)}
-          className="flex flex-col items-center gap-1 p-2 rounded-lg transition-colors text-gray-400"
-        >
-          <Settings size={24} />
-          <span className="text-[10px]">Setelan</span>
-        </button>
+        <MobileNavItem to="/riwayat" icon={History} label="Riwayat" />
       </nav>
 
       {/* SETTINGS MODAL */}
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <Settings className="text-primary" size={24}/> Pengaturan
@@ -161,7 +177,50 @@ const Layout = ({ children }: { children?: React.ReactNode }) => {
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-gray-100 space-y-3">
+              <div className="pt-4 border-t border-gray-100 space-y-4">
+                <label className="text-sm font-bold text-gray-600 mb-1 block flex items-center gap-2">
+                  <Store size={18}/> Profil Toko
+                </label>
+                
+                <div>
+                  <label className="text-xs text-gray-500 font-bold block mb-1">Nama Toko</label>
+                  <input 
+                    type="text" 
+                    value={storeName} 
+                    onChange={e => setStoreName(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-500 font-bold block mb-1">Alamat Lengkap</label>
+                  <textarea 
+                    value={storeAddress} 
+                    onChange={e => setStoreAddress(e.target.value)}
+                    rows={2}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-500 font-bold block mb-1">Nomor Telepon</label>
+                  <input 
+                    type="text" 
+                    value={storePhone} 
+                    onChange={e => setStorePhone(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                
+                <button 
+                  onClick={handleSaveProfile}
+                  className="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary/90 flex justify-center items-center gap-2 mt-2"
+                >
+                  <Check size={18} /> Simpan Pengaturan
+                </button>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100">
                  <p className="text-center text-xs text-gray-400">WarungPintar App v2.1</p>
               </div>
             </div>

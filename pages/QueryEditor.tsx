@@ -71,7 +71,7 @@ export const QueryEditor: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto min-h-screen pb-20">
+    <div className="w-full max-w-[1400px] mx-auto min-h-screen px-4 md:px-8 pb-20">
       <div className="mb-6">
          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
            <Database className="text-primary"/> SQL Playground

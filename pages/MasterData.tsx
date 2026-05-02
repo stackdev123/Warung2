@@ -138,7 +138,7 @@ export const MasterData: React.FC = () => {
   });
 
   return (
-    <div className="max-w-7xl mx-auto min-h-screen space-y-6">
+    <div className="w-full max-w-[1400px] mx-auto min-h-screen space-y-6 px-4 md:px-8 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
            <h1 className="text-2xl font-bold text-gray-800">Manajemen Stok</h1>
@@ -150,14 +150,14 @@ export const MasterData: React.FC = () => {
             className="flex-1 md:flex-none bg-blue-600 text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold hover:bg-blue-700 transition-all shadow-lg text-sm whitespace-nowrap"
           >
             <ShoppingCart size={18} />
-            Belanja Stok
+            Belanja
           </button>
           <button 
             onClick={() => handleAdd('')}
             className="flex-1 md:flex-none bg-white text-gray-700 border border-gray-200 px-5 py-3 rounded-xl flex items-center justify-center gap-2 font-bold hover:bg-gray-50 transition-all shadow-sm text-sm whitespace-nowrap"
           >
             <Keyboard size={18} />
-            Input Baru
+            Input
           </button>
           <button 
             onClick={() => setIsScannerOpen(true)}

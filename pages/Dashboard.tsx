@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/db';
-import { ShopStats, TopProduct } from '../types';
+import { ShopStats, TopProduct, TransactionType } from '../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
-import { TrendingUp, Wallet, RefreshCcw, Loader2, AlertCircle, Box, Calendar, DollarSign, Package, Award } from 'lucide-react';
+import { TrendingUp, Wallet, RefreshCcw, Loader2, AlertCircle, Box, Calendar, DollarSign, Package, Award, ArrowUpRight, ArrowDownLeft, X } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<ShopStats>({
@@ -33,9 +33,65 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  // Tunai Modal State
+  const [isTunaiModalOpen, setIsTunaiModalOpen] = useState(false);
+  const [tunaiType, setTunaiType] = useState<'TARIK_TUNAI' | 'SETOR_TUNAI'>('TARIK_TUNAI');
+  const [tunaiAmount, setTunaiAmount] = useState<string>('');
+  const [tunaiFee, setTunaiFee] = useState<string>('');
+  const [tunaiBank, setTunaiBank] = useState<string>('');
+  const [tunaiCustomer, setTunaiCustomer] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
   useEffect(() => {
     fetchStats();
   }, []);
+
+  const handleTunaiSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = Number(tunaiAmount);
+    const fee = Number(tunaiFee);
+    
+    if (amount <= 0 || fee < 0) return;
+    
+    setIsProcessing(true);
+    try {
+      const transaction = {
+        id: Date.now().toString(),
+        type: tunaiType === 'TARIK_TUNAI' ? TransactionType.TARIK_TUNAI : TransactionType.SETOR_TUNAI,
+        timestamp: Date.now(),
+        items: [{
+          barcode: tunaiType,
+          name: `${tunaiType === 'TARIK_TUNAI' ? 'Tarik Tunai' : 'Setor Tunai'}${tunaiBank ? ' - ' + tunaiBank : ''}${tunaiCustomer ? ' (' + tunaiCustomer + ')' : ''}`,
+          category: 'JASA',
+          buyPrice: 0,
+          sellPrice: fee,
+          stock: 0,
+          quantity: 1
+        }],
+        totalAmount: amount,  // Pokok
+        subtotal: fee,        // Admin Fee (Profit)
+        paymentMethod: 'CASH' as const,
+        amountPaid: amount + fee,
+        change: 0,
+        note: tunaiBank,
+        partyName: tunaiCustomer || undefined,
+      };
+      
+      await db.saveTransaction(transaction);
+      
+      await fetchStats();
+      setIsTunaiModalOpen(false);
+      setTunaiAmount('');
+      setTunaiFee('');
+      setTunaiBank('');
+      setTunaiCustomer('');
+    } catch (error) {
+      console.error(error);
+      alert("Gagal memproses transaksi");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -58,8 +114,8 @@ export const Dashboard: React.FC = () => {
   const hasFinanceData = financeData.length > 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-10 px-4 md:px-0">
-      <div className="w-[300px] md:w-full mx-auto space-y-8">
+    <div className="w-full max-w-[1400px] mx-auto space-y-8 pb-10 px-4 md:px-8">
+      <div className="w-full mx-auto space-y-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
              <div className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-1">
@@ -122,6 +178,28 @@ export const Dashboard: React.FC = () => {
              <p className="text-3xl font-bold">{stats.lowStockCount} <span className="text-lg font-normal opacity-80">Item</span></p>
           </div>
         </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex flex-col md:flex-row gap-4 justify-start">
+        <button 
+          onClick={() => { setTunaiType('TARIK_TUNAI'); setIsTunaiModalOpen(true); }}
+          className="bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all rounded-xl p-4 flex items-center justify-center gap-3 text-gray-800 font-bold active:scale-95"
+        >
+          <div className="bg-orange-100 text-orange-600 p-2 rounded-lg">
+            <ArrowUpRight size={24} />
+          </div>
+          Tarik Tunai
+        </button>
+        <button 
+          onClick={() => { setTunaiType('SETOR_TUNAI'); setIsTunaiModalOpen(true); }}
+          className="bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300 transition-all rounded-xl p-4 flex items-center justify-center gap-3 text-gray-800 font-bold active:scale-95"
+        >
+          <div className="bg-emerald-100 text-emerald-600 p-2 rounded-lg">
+            <ArrowDownLeft size={24} />
+          </div>
+          Setor Tunai
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -253,7 +331,109 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* Tunai Modal */}
+      {isTunaiModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className={`p-5 border-b flex justify-between items-center text-white ${tunaiType === 'TARIK_TUNAI' ? 'bg-orange-500' : 'bg-emerald-500'}`}>
+              <h2 className="font-bold text-lg flex items-center gap-2">
+                {tunaiType === 'TARIK_TUNAI' ? <ArrowUpRight size={20} /> : <ArrowDownLeft size={20} />}
+                {tunaiType === 'TARIK_TUNAI' ? 'Tarik Tunai' : 'Setor Tunai'}
+              </h2>
+              <button 
+                onClick={() => setIsTunaiModalOpen(false)} 
+                className="p-1.5 bg-black/10 hover:bg-black/20 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleTunaiSubmit} className="p-6">
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Jumlah (Pokok)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3 text-gray-400 font-bold">Rp</span>
+                  <input
+                    type="number"
+                    required
+                    value={tunaiAmount}
+                    onChange={(e) => setTunaiAmount(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+                    placeholder="0"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  {tunaiType === 'TARIK_TUNAI' 
+                    ? 'Uang fisik yang diberikan ke pelanggan' 
+                    : 'Uang fisik yang diterima dari pelanggan'}
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Bank / Merchant (Opsional)</label>
+                <select
+                  value={tunaiBank}
+                  onChange={(e) => setTunaiBank(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+                >
+                  <option value="">-- Pilih Bank / Merchant --</option>
+                  <option value="BCA">BCA</option>
+                  <option value="Mandiri">Mandiri</option>
+                  <option value="BNI">BNI</option>
+                  <option value="BRI">BRI</option>
+                  <option value="Gopay">GoPay</option>
+                  <option value="OVO">OVO</option>
+                  <option value="Dana">DANA</option>
+                  <option value="ShopeePay">ShopeePay</option>
+                  <option value="LinkAja">LinkAja</option>
+                  <option value="Lainnya">Lainnya...</option>
+                </select>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Nama Pelanggan (Opsional)</label>
+                <input
+                  type="text"
+                  value={tunaiCustomer}
+                  onChange={(e) => setTunaiCustomer(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+                  placeholder="Masukkan nama pelanggan"
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Biaya Admin (Keuntungan)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3 text-gray-400 font-bold">Rp</span>
+                  <input
+                    type="number"
+                    required
+                    value={tunaiFee}
+                    onChange={(e) => setTunaiFee(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-lg focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all"
+                    placeholder="Contoh: 5000"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isProcessing}
+                className={`w-full py-4 rounded-xl font-bold text-white shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all ${
+                  tunaiType === 'TARIK_TUNAI' 
+                    ? 'bg-gradient-to-r from-orange-500 to-red-500 shadow-orange-300/50 hover:shadow-orange-400/50' 
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-300/50 hover:shadow-emerald-400/50'
+                } ${isProcessing ? 'opacity-70' : ''}`}
+              >
+                {isProcessing ? <Loader2 className="animate-spin" size={24} /> : 'Konfirmasi & Simpan'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      </div>
     </div>
-  </div>
-);
+  );
 };

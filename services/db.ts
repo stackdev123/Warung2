@@ -24,6 +24,19 @@ export const db = {
     localStorage.setItem(KEYS.THEME, colorName);
   },
 
+  // --- STORE PROFILE ---
+  getStoreProfile: () => {
+    try {
+      const data = localStorage.getItem('wp_store_profile');
+      if (data) return JSON.parse(data);
+    } catch(e) {}
+    return { name: 'Tokoo', address: 'Jl. Raya Warung No. 1', phone: '0812-3456-7890' };
+  },
+  
+  saveStoreProfile: (profile: { name: string, address: string, phone: string }) => {
+    localStorage.setItem('wp_store_profile', JSON.stringify(profile));
+  },
+
   // --- PRODUCTS ---
   getProducts: async (): Promise<Product[]> => {
     const { data, error } = await supabase
@@ -415,14 +428,20 @@ export const db = {
     const todayTransactions = transactions.filter(t => t.timestamp >= today);
 
     const totalSalesToday = todayTransactions
-      .filter(t => t.type === TransactionType.OUT)
-      .reduce((sum, t) => sum + t.totalAmount, 0);
+      .filter(t => t.type === TransactionType.OUT || t.type === TransactionType.TARIK_TUNAI || t.type === TransactionType.SETOR_TUNAI)
+      .reduce((sum, t) => {
+         if (t.type === TransactionType.OUT) return sum + t.totalAmount;
+         return sum + (t.subtotal || 0);
+      }, 0);
 
     const totalProfitToday = todayTransactions
-      .filter(t => t.type === TransactionType.OUT)
+      .filter(t => t.type === TransactionType.OUT || t.type === TransactionType.TARIK_TUNAI || t.type === TransactionType.SETOR_TUNAI)
       .reduce((sum, t) => {
-        const cost = t.items.reduce((c, i) => c + (i.buyPrice * i.quantity), 0);
-        return sum + (t.totalAmount - cost);
+        if (t.type === TransactionType.OUT) {
+          const cost = t.items.reduce((c, i) => c + (i.buyPrice * i.quantity), 0);
+          return sum + (t.totalAmount - cost);
+        }
+        return sum + (t.subtotal || 0);
       }, 0);
 
     const inventoryValue = products.reduce((sum, p) => sum + (p.buyPrice * p.stock), 0);
@@ -439,9 +458,9 @@ export const db = {
            if (t.paymentMethod === 'DEBT') entryAmount = t.amountPaid;
            else entryAmount = t.totalAmount; 
            cashBalance -= entryAmount;
-        } else if (t.type === TransactionType.EXPENSE) {
+        } else if (t.type === TransactionType.EXPENSE || t.type === TransactionType.TARIK_TUNAI) {
            cashBalance -= t.totalAmount;
-        } else if (t.type === TransactionType.INCOME) {
+        } else if (t.type === TransactionType.INCOME || t.type === TransactionType.SETOR_TUNAI) {
            cashBalance += t.totalAmount;
         } else if (t.type === TransactionType.ADJUSTMENT) {
            if (t.amountPaid === 1) cashBalance += t.totalAmount;
